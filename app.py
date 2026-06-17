@@ -23,7 +23,8 @@ from economy_shared import load_state
 load_state()
 from economy_shared import state, save_state
 from economy import get_user
-from slack_utils import parse_slack_mentions, strip_slack_mentions, slack_mention, unicode_to_slack_emoji
+from slack_utils import parse_slack_mentions, slack_mention
+from fusbot_routing import allowed_in_workspace_channel, build_roast_request
 
 CHAT_HISTORY = defaultdict(lambda: deque(maxlen=10))
 ACTIVE_CONVO = {}
@@ -780,17 +781,17 @@ async def roast_cmd(ack, say, command, client):
     mention_ids = parse_slack_mentions(text)
     if mention_ids:
         out = []
-        clean_prompt = strip_slack_mentions(text)
-        for uid in mention_ids:
-            hint = clean_prompt or f"Roast them"
-            response = await bot_roast(hint, uid, mode)
+        request = build_roast_request(text, user_id)
+        for uid in request.target_user_ids:
+            response = await bot_roast(request.prompt, uid, mode)
             out.append(f"{slack_mention(uid)} {response}")
         final = "\n".join(x for x in out if x.strip()) or "Even all the models refused to roast."
         await say(final)
         return
 
     if text:
-        resp = await bot_roast(text, user_id, mode)
+        request = build_roast_request(text, user_id)
+        resp = await bot_roast(request.prompt, user_id, mode)
         if not resp or not resp.strip():
             resp = "Even the AI models said 'nah bro I'm good'."
         await say(f"{slack_mention(user_id)} {resp}")
@@ -883,6 +884,12 @@ async def handle_message(event, say, client, context):
     team_id = context.get("team_id", "") or event.get("team", "")
     enterprise_id = context.get("enterprise_id", "")
 
+    # restrict bot speaking/observing to one channel in a specific workspace/enterprise
+    _allowed_workspace = os.getenv("ALLOWED_WORKSPACE_ID", "")
+    _allowed_channel = os.getenv("ALLOWED_CHANNEL_ID", "")
+    if not allowed_in_workspace_channel(team_id, enterprise_id, channel_id, _allowed_workspace, _allowed_channel):
+        return
+
     skey = session_key(channel_id, uid)
     convo = ACTIVE_CONVO.get(skey)
     last_bot = LAST_BOT_MESSAGE.get(skey)
@@ -904,21 +911,12 @@ async def handle_message(event, say, client, context):
     alias_mentioned = mentions_fusbot(text)
     mentioned = bot_mentioned or alias_mentioned
 
-    # restrict to one channel in a specific workspace/enterprise
-    _allowed_workspace = os.getenv("ALLOWED_WORKSPACE_ID", "")
-    _allowed_channel = os.getenv("ALLOWED_CHANNEL_ID", "")
-    if _allowed_workspace and _allowed_channel:
-        in_workspace = (enterprise_id == _allowed_workspace or team_id == _allowed_workspace)
-        if in_workspace and channel_id != _allowed_channel and not mentioned:
-            return
-
     # auto-roast when mentioned in auto-roast channel
     if mentioned and auto_roast.get(channel_id):
-        mention_ids = [u for u in parse_slack_mentions(text) if u != bot_user_id]
-        target_uid = mention_ids[0] if mention_ids else uid
-        prompt = strip_slack_mentions(text) or f"Roast them"
+        request = build_roast_request(text, uid, bot_user_id)
+        target_uid = request.target_user_ids[0]
         mode = roast_mode.get(uid, "deep")
-        reply = await bot_roast(prompt, target_uid, mode)
+        reply = await bot_roast(request.prompt, target_uid, mode)
         if reply:
             await say(f"{slack_mention(target_uid)} {reply}")
             LAST_BOT_MESSAGE[skey] = reply

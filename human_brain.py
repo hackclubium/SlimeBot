@@ -7,6 +7,7 @@ import os
 import re
 from mentions import mentions_fusbot
 from ai_interject import ai_interject_line
+from fusbot_routing import build_roast_request
 from collections import defaultdict, deque, Counter
 from typing import Any, Awaitable, Dict, Deque, List, Tuple, Optional, Callable
 
@@ -1278,7 +1279,11 @@ class BrainRuntime:
                 return None
 
             if intent == "roast_request" and mode:
-                reply = await self.roast_fn(content, uid, mode)
+                request = build_roast_request(content, uid, bot_user_id)
+                target_uid = request.target_user_ids[0]
+                reply = await self.roast_fn(request.prompt, target_uid, mode)
+                if reply and target_uid != uid:
+                    reply = f"<@{target_uid}> {reply}"
             else:
                 reply = await self.chat_fn(content, uid, channel_id, team_id)
 
