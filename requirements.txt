@@ -12,3 +12,4 @@ akinator.py
 pillow==9.5.0
 moviepy==1.0.3
 numpy
+libclang
