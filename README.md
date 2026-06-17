@@ -34,7 +34,6 @@
 | 🗺️ Quests | Daily quest board, claim rewards |
 | 🏆 Achievements | 33 tracked milestones, mastery grades |
 | 🎖️ Titles & Badges | Unlock and equip cosmetic titles |
-| ♟️ Lichess | Live game tracking for a lichess account |
 | 🛡️ AutoMod | Spam detection, slur filter, escalation ladder |
 | 🎉 Fun | Akinator, animal facts, emoji mixup, rave, image gen |
 
@@ -257,17 +256,6 @@ The bot runs on GitHub Actions on a 6-hour cron. When the job ends, state files 
 | `/titles [@user]` | View unlocked titles |
 | `/titles equip title` | Equip a title |
 | `/badge [@user]` | View badges |
-
-</details>
-
-<details>
-<summary><b>♟️ Lichess</b></summary>
-
-| Command | Description |
-|---|---|
-| `/lichess` | View lichess status |
-| `/lichess game` | View the last game |
-| `/lichess stream` | Live-stream updates |
 
 </details>
 
