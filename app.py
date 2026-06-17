@@ -771,6 +771,35 @@ def _init_brain(client: AsyncWebClient):
 
 # ── Slash commands ─────────────────────────────────────────────────────────────
 
+async def _resolve_name_to_uid(name: str, client) -> str | None:
+    """Look up a Slack user ID from a display name like '@john' or 'john'."""
+    name = name.lstrip("@").strip().lower()
+    try:
+        cursor = None
+        while True:
+            kwargs = {"limit": 200}
+            if cursor:
+                kwargs["cursor"] = cursor
+            result = await client.users_list(**kwargs)
+            for member in result.get("members", []):
+                if member.get("deleted") or member.get("is_bot"):
+                    continue
+                profile = member.get("profile", {})
+                candidates = [
+                    (profile.get("display_name") or "").lower(),
+                    (profile.get("real_name") or "").lower(),
+                    (member.get("name") or "").lower(),
+                ]
+                if name in candidates:
+                    return member["id"]
+            cursor = result.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+    except Exception:
+        pass
+    return None
+
+
 @app.command("/fus_roast")
 async def roast_cmd(ack, say, command, client):
     await ack()
@@ -778,18 +807,29 @@ async def roast_cmd(ack, say, command, client):
     user_id = command["user_id"]
     mode = roast_mode.get(user_id, "deep")
 
+    # resolve <@U...> encoded mentions (autocomplete path)
     mention_ids = parse_slack_mentions(text)
+
+    # fallback: user typed @name manually without using autocomplete
+    if not mention_ids and text.startswith("@") and " " not in text.strip():
+        resolved = await _resolve_name_to_uid(text, client)
+        if resolved:
+            mention_ids = [resolved]
+
     if mention_ids:
         out = []
         request = build_roast_request(text, user_id)
-        for uid in request.target_user_ids:
-            response = await bot_roast(request.prompt, uid, mode)
+        # use resolved mention_ids directly since build_roast_request may not see plain @name
+        for uid in (mention_ids if mention_ids else request.target_user_ids):
+            target_prompt = f"Target to roast: {slack_mention(uid)}. Write one short roast addressed only to this target."
+            response = await bot_roast(target_prompt, uid, mode)
             out.append(f"{slack_mention(uid)} {response}")
         final = "\n".join(x for x in out if x.strip()) or "Even all the models refused to roast."
         await say(final)
         return
 
     if text:
+        # plain text roast — no target, roast is about the message content
         request = build_roast_request(text, user_id)
         resp = await bot_roast(request.prompt, user_id, mode)
         if not resp or not resp.strip():
