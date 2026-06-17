@@ -2,12 +2,14 @@ name: Run Slack Bot
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
   schedule:
     - cron: "0 */6 * * *"
 
 concurrency:
   group: slack-bot
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   run-bot:
