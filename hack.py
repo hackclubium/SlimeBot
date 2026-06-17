@@ -1,6 +1,4 @@
 from economy_shared import state, save_state
-import clang.cindex
-from clang.cindex import Index, CursorKind, Config
 import ast
 import random
 import datetime
@@ -10,21 +8,26 @@ import re
 import glob
 import subprocess
 
+try:
+    import clang.cindex
+    from clang.cindex import Index, CursorKind, Config
+    _clang_path = clang.cindex.Config.library_path
+    if _clang_path and os.path.isdir(_clang_path):
+        libs = glob.glob(os.path.join(_clang_path, "libclang.so*"))
+        if libs:
+            Config.set_library_file(libs[0])
+except Exception:
+    clang = None
+    Index = None
+    CursorKind = None
+    Config = None
+
 def detect_gcc_version():
     try:
         out = subprocess.check_output(["g++", "-dumpfullversion", "-dumpversion"], text=True).strip()
         return out.split(".")[0]
     except Exception:
         return "13"
-
-try:
-    clang_path = clang.cindex.Config.library_path
-    if clang_path and os.path.isdir(clang_path):
-        libs = glob.glob(os.path.join(clang_path, "libclang.so*"))
-        if libs:
-            Config.set_library_file(libs[0])
-except Exception:
-    pass
 
 try:
     from openai import OpenAI
