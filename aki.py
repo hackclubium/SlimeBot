@@ -1,8 +1,46 @@
 import logging
 import asyncio
 import akinator
+import akinator.async_client as _aki_mod
 
 log = logging.getLogger("aki")
+
+# Akinator API no longer always returns 'akitude' — patch the handler so it
+# doesn't crash with KeyError when the field is absent.
+async def _patched_handler(self, response):
+    response.raise_for_status()
+    try:
+        data = response.json()
+    except Exception as e:
+        if "A technical problem has ocurred." in response.text:
+            raise RuntimeError("A technical problem has occurred. Please try again later.") from e
+        raise RuntimeError("Failed to parse the response as JSON.") from e
+    if "completion" not in data:
+        data["completion"] = self.completion
+    if data["completion"] == "KO - TIMEOUT":
+        raise RuntimeError("The session has timed out. Please start a new game.")
+    if data["completion"] == "SOUNDLIKE":
+        self.finished = True
+        self.win = True
+        if not self.id_proposition:
+            self.defeat()
+    elif "id_proposition" in data:
+        self.win = True
+        self.id_proposition = data["id_proposition"]
+        self.name_proposition = data["name_proposition"]
+        self.description_proposition = data["description_proposition"]
+        self.step_last_proposition = self.step
+        self.pseudo = data["pseudo"]
+        self.flag_photo = data["flag_photo"]
+        self.photo = data["photo"]
+    else:
+        self.akitude = data.get("akitude", self.akitude)  # field absent in some responses
+        self.step = int(data["step"])
+        self.progression = float(data["progression"])
+        self.question = data["question"]
+    self.completion = data["completion"]
+
+_aki_mod.AsyncClient._AsyncClient__handler = _patched_handler
 
 ANSWER_MAP = {"yes": "y", "no": "n", "idk": "i", "probably": "p", "probably_not": "pn"}
 
