@@ -432,7 +432,7 @@ async def setup(app):
 
         elif action == "stats":
             import re as re_mod
-            m = re_mod.search(r"<@([A-Z0-9]+)>", arg); target_id = m.group(1) if m else uid
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", arg); target_id = m.group(1) if m else uid
             row = _db("SELECT wins, losses, elo FROM stats WHERE user_id=?", (target_id,), fetch=True, one=True)
             if not row:
                 await client.chat_postEphemeral(channel=channel, user=uid, text=f"no stats for <@{target_id}> yet"); return

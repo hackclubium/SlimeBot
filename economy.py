@@ -251,10 +251,13 @@ async def setup(app):
         uid = command["user_id"]
         text = (command.get("text") or "").strip()
         target_id = uid
-        if text and text.startswith("<@"):
+        if text:
             import re
-            m = re.search(r"<@([A-Z0-9]+)>", text)
-            if m: target_id = m.group(1)
+            m = re.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", text)
+            if m:
+                target_id = m.group(1)
+            elif text.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
         horsenncy = await get_balance(target_id)
         await respond(text=f":banknote: <@{target_id}> has *{horsenncy} horsenncy*.")
 
@@ -447,31 +450,81 @@ async def setup(app):
 
     # ── /give ─────────────────────────────────────────────────────────────────
 
-    @app.command("/fus_give")
-    async def give(ack, command, respond):
-        await ack()
-        uid = command["user_id"]
-        import re
-        text = (command.get("text") or "").strip()
-        m = re.search(r"<@([A-Z0-9]+)>", text)
-        if not m:
-            return await respond(text="Usage: `/fus_give @user amount`", response_type="ephemeral")
-        target_id = m.group(1)
-        rest = re.sub(r"<@[A-Z0-9]+>", "", text).strip()
-        try:
-            amount = int(rest)
-        except Exception:
-            return await respond(text="Usage: `/fus_give @user amount`", response_type="ephemeral")
-        if amount <= 0:
-            return await respond(text="Amount must be positive.", response_type="ephemeral")
+    async def _do_give(uid, target_id, amount, channel, client):
         if uid == target_id:
-            return await respond(text="Can't give to yourself.", response_type="ephemeral")
+            await client.chat_postEphemeral(channel=channel, user=uid, text="Can't give to yourself.")
+            return
+        if amount <= 0:
+            await client.chat_postEphemeral(channel=channel, user=uid, text="Amount must be positive.")
+            return
         bal = await get_balance(uid)
         if bal < amount:
-            return await respond(text="Not enough horsenncy.", response_type="ephemeral")
+            await client.chat_postEphemeral(channel=channel, user=uid, text="Not enough horsenncy.")
+            return
         await update_balance(uid, -amount)
         await update_balance(target_id, amount)
-        await respond(text=f":handshake: <@{uid}> gave *{amount} horsenncy* to <@{target_id}>!")
+        await client.chat_postMessage(channel=channel, text=f":handshake: <@{uid}> gave *{amount} horsenncy* to <@{target_id}>!")
+
+    @app.command("/fus_give")
+    async def give(ack, command, respond, client):
+        await ack()
+        import re, json
+        uid = command["user_id"]
+        channel = command["channel_id"]
+        text = (command.get("text") or "").strip()
+        m = re.search(r"<@([A-Z0-9]+)(?:\|[^>]*)?>", text)
+        if m:
+            target_id = m.group(1)
+            rest = re.sub(r"<@[A-Z0-9]+(?:\|[^>]*)?>", "", text).strip()
+            try:
+                amount = int(rest)
+            except Exception:
+                return await respond(text="Usage: `/fus_give @user amount`", response_type="ephemeral")
+            await _do_give(uid, target_id, amount, channel, client)
+            return
+        # no UID parsed — open a modal with user picker + amount field
+        await client.views_open(
+            trigger_id=command["trigger_id"],
+            view={
+                "type": "modal",
+                "callback_id": "give_pick_target",
+                "private_metadata": json.dumps({"uid": uid, "channel": channel}),
+                "title": {"type": "plain_text", "text": "Give horsenncy"},
+                "submit": {"type": "plain_text", "text": "Give"},
+                "close": {"type": "plain_text", "text": "Cancel"},
+                "blocks": [
+                    {
+                        "type": "input",
+                        "block_id": "target_block",
+                        "label": {"type": "plain_text", "text": "Who?"},
+                        "element": {"type": "users_select", "action_id": "target_user",
+                                    "placeholder": {"type": "plain_text", "text": "Select a person"}},
+                    },
+                    {
+                        "type": "input",
+                        "block_id": "amount_block",
+                        "label": {"type": "plain_text", "text": "Amount"},
+                        "element": {"type": "plain_text_input", "action_id": "amount_val",
+                                    "placeholder": {"type": "plain_text", "text": "e.g. 500"}},
+                    },
+                ],
+            },
+        )
+
+    @app.view("give_pick_target")
+    async def give_modal_submit(ack, body, client):
+        await ack()
+        import json
+        meta = json.loads(body["view"]["private_metadata"])
+        uid = meta["uid"]
+        channel = meta["channel"]
+        target_id = body["view"]["state"]["values"]["target_block"]["target_user"]["selected_user"]
+        try:
+            amount = int(body["view"]["state"]["values"]["amount_block"]["amount_val"]["value"])
+        except Exception:
+            await client.chat_postEphemeral(channel=channel, user=uid, text="Invalid amount.")
+            return
+        await _do_give(uid, target_id, amount, channel, client)
 
     # ── /coinflip ─────────────────────────────────────────────────────────────
 

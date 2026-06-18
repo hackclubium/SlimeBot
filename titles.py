@@ -80,8 +80,10 @@ async def setup(app):
 
         else:
             target_id = uid; mention = f"<@{uid}>"
-            m = re_mod.search(r"<@([A-Z0-9]+)>", text)
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", text)
             if m: target_id = m.group(1); mention = f"<@{target_id}>"
+            elif text.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
             data = get_user(target_id); titles = unlocked_titles(target_id)
             equipped = data.get("equipped_title") or titles[0]
             lines = "\n".join(f"• {t}" for t in titles[:25])

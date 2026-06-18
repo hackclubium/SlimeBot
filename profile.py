@@ -199,8 +199,10 @@ async def setup(app):
                 await respond(text="Achievement module not available."); return
             channel = command["channel_id"]
             target_id = uid; mention = f"<@{uid}>"
-            m = re_mod.search(r"<@([A-Z0-9]+)>", rest)
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", rest)
             if m: target_id = m.group(1); mention = f"<@{target_id}>"
+            elif rest.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
             meta = get_profile_meta(target_id)
             snapshot = meta["snapshot"]; summary = meta["summary"]; results = meta["results"]; grades = meta["grades"]
             wealth_text = f"#{snapshot['wealth_rank']}/{snapshot['ranked_users']}" if snapshot["wealth_rank"] else "Unranked"
@@ -230,8 +232,10 @@ async def setup(app):
                 coll_snapshot = None; rarity_counts = lambda x: {}; compact_dict_lines = lambda d: "n/a"
             channel = command["channel_id"]
             target_id = uid; mention = f"<@{uid}>"
-            m = re_mod.search(r"<@([A-Z0-9]+)>", rest)
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", rest)
             if m: target_id = m.group(1); mention = f"<@{target_id}>"
+            elif rest.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
             data = get_user(target_id)
             snapshot = coll_snapshot(target_id, data) if coll_snapshot else None
             inventory = data.get("inventory", {}) if isinstance(data.get("inventory", {}), dict) else {}
@@ -272,8 +276,10 @@ async def setup(app):
 
         else:
             target_id = uid; display_name = f"<@{uid}>"
-            m = re_mod.search(r"<@([A-Z0-9]+)>", text)
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", text)
             if m: target_id = m.group(1); display_name = f"<@{target_id}>"
+            elif text.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
             data = get_user(target_id)
             profile_text = _build_profile_text(target_id, data, display_name)
             await respond(text=profile_text)

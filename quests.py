@@ -139,8 +139,10 @@ async def setup(app):
 
         else:
             target_id = uid; mention = f"<@{uid}>"
-            m = re_mod.search(r"<@([A-Z0-9]+)>", text)
+            m = re_mod.search(r"<@([A-Z0-9]+)(?:|[^>]*)?>", text)
             if m: target_id = m.group(1); mention = f"<@{target_id}>"
+            elif text.startswith("@"):
+                await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral"); return
             board = QuestBoard.board_for(target_id); today = QuestBoard.today_key()
             complete_count = sum(1 for q in board if q["done"]); claimed_count = sum(1 for q in board if q["claimed"])
             lines = []

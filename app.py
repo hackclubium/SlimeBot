@@ -859,6 +859,9 @@ async def data_cmd(ack, respond, command):
     await ack()
     text = command.get("text", "").strip()
     mention_ids = parse_slack_mentions(text)
+    if not mention_ids and text.startswith("@"):
+        await respond(text="Use the @ autocomplete to pick a user — plain @name isn't supported in this workspace.", response_type="ephemeral")
+        return
     target_uid = mention_ids[0] if mention_ids else command["user_id"]
 
     mem = get_user_memory(target_uid)
