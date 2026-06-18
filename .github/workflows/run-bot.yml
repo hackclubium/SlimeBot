@@ -30,6 +30,7 @@ jobs:
       STABILITY_API_KEY: ${{ secrets.STABILITY_API_KEY }}
       REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
       PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
+      LLM_FAUCET_KEY: ${{ secrets.LLM_FAUCET_KEY }}
 
     steps:
       - name: Checkout code

@@ -526,9 +526,9 @@ class HackerUniverse:
                 text += f"\nModule: `{mod_name}` | Difficulty: {difficulty} | Chaos: {chaos_label.get(chaos_level,'?')}"
                 try:
                     await client.chat_update(channel=channel, ts=ts, text=text)
-                except Exception:
-                    pass
-                await asyncio.sleep(0.6)
+                except Exception as e:
+                    import sys; print(f"[HACK ANIM] chat_update failed: {e}", file=sys.stderr)
+                await asyncio.sleep(0.8)
 
 
 _engine = HackerUniverse()
