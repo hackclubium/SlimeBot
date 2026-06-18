@@ -771,43 +771,6 @@ def _init_brain(client: AsyncWebClient):
 
 # ── Slash commands ─────────────────────────────────────────────────────────────
 
-async def _resolve_name_to_uid(name: str, client) -> str | None:
-    """Look up a Slack user ID from a display name like '@john' or 'john'."""
-    name = name.lstrip("@").strip().lower()
-    log(f"[RESOLVE] looking up name={name!r}")
-    try:
-        cursor = None
-        page = 0
-        while True:
-            kwargs = {"limit": 200}
-            if cursor:
-                kwargs["cursor"] = cursor
-            result = await client.users_list(**kwargs)
-            members = result.get("members", [])
-            page += 1
-            log(f"[RESOLVE] page={page} members={len(members)}")
-            for member in members:
-                if member.get("deleted") or member.get("is_bot"):
-                    continue
-                profile = member.get("profile", {})
-                candidates = [
-                    (profile.get("display_name") or "").lower(),
-                    (profile.get("display_name_normalized") or "").lower(),
-                    (profile.get("real_name") or "").lower(),
-                    (profile.get("real_name_normalized") or "").lower(),
-                    (member.get("name") or "").lower(),
-                ]
-                if name in candidates:
-                    log(f"[RESOLVE] found {member['id']} for {name!r}")
-                    return member["id"]
-            cursor = result.get("response_metadata", {}).get("next_cursor")
-            if not cursor:
-                break
-    except Exception as e:
-        log(f"[RESOLVE] error: {e}")
-    log(f"[RESOLVE] no match for {name!r}")
-    return None
-
 
 @app.command("/fus_roast")
 async def roast_cmd(ack, say, command, client):
@@ -819,22 +782,31 @@ async def roast_cmd(ack, say, command, client):
     # resolve <@U...> encoded mentions (autocomplete path)
     mention_ids = parse_slack_mentions(text)
 
-    # fallback: user typed @name manually without using autocomplete
-    typed_at_target = not mention_ids and text.startswith("@") and " " not in text.strip()
-    if typed_at_target:
-        resolved = await _resolve_name_to_uid(text, client)
-        if resolved:
-            mention_ids = [resolved]
-
     log(f"[ROAST] user={user_id} text={text!r} mention_ids={mention_ids}")
 
-    # user tried to mention someone but target couldn't be resolved (bot, unknown user, etc.)
-    if typed_at_target and not mention_ids:
-        name = text.lstrip("@").strip()
-        if name.lower() in ("fusbot", "fus_bot", "fus"):
-            await say("i don't roast myself. that's your job.")
-        else:
-            await say(f"can't find `{text}` — use the @ autocomplete dropdown to pick a real target.")
+    # no valid mention parsed — open a user-picker modal
+    if not mention_ids and (not text or text.startswith("@")):
+        await client.views_open(
+            trigger_id=command["trigger_id"],
+            view={
+                "type": "modal",
+                "callback_id": "roast_pick_target",
+                "private_metadata": json.dumps({"mode": mode, "channel": command["channel_id"]}),
+                "title": {"type": "plain_text", "text": "Pick a target"},
+                "submit": {"type": "plain_text", "text": "Roast"},
+                "close": {"type": "plain_text", "text": "Cancel"},
+                "blocks": [{
+                    "type": "input",
+                    "block_id": "target_block",
+                    "label": {"type": "plain_text", "text": "Who do you want to roast?"},
+                    "element": {
+                        "type": "users_select",
+                        "action_id": "target_user",
+                        "placeholder": {"type": "plain_text", "text": "Select someone"},
+                    },
+                }],
+            },
+        )
         return
 
     if mention_ids:
@@ -862,6 +834,24 @@ async def roast_cmd(ack, say, command, client):
         return
 
     await say("Use `/fus_roast @User`, `/fus_roast @User1 @User2`, or `/fus_roast your text here`")
+
+
+@app.view("roast_pick_target")
+async def roast_modal_submit(ack, body, client):
+    await ack()
+    meta = json.loads(body["view"]["private_metadata"])
+    channel = meta["channel"]
+    mode = meta.get("mode", "deep")
+    user_id = body["user"]["id"]
+    uid = body["view"]["state"]["values"]["target_block"]["target_user"]["selected_user"]
+    try:
+        info = await client.users_info(user=uid)
+        target_name = info["user"]["profile"].get("display_name") or info["user"].get("name") or uid
+    except Exception:
+        target_name = uid
+    target_prompt = f"Roast {target_name}. One short roast line addressed directly to {target_name} only."
+    response = await bot_roast(target_prompt, uid, mode)
+    await client.chat_postMessage(channel=channel, text=f"{slack_mention(uid)} {response}")
 
 
 @app.command("/fus_data")
