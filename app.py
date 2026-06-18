@@ -173,10 +173,11 @@ def wrap_text(text):
 
 async def safe_completion(model, messages):
     loop = asyncio.get_event_loop()
+    _timeout = 30 if model.startswith("faucet:") else 12
 
     async def run(fn):
         try:
-            return await asyncio.wait_for(loop.run_in_executor(None, fn), timeout=12)
+            return await asyncio.wait_for(loop.run_in_executor(None, fn), timeout=_timeout)
         except Exception as e:
             log(f"[TIMEOUT/ERROR:{model}] {e}")
             return None
