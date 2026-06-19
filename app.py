@@ -120,16 +120,9 @@ openrouter_client = (
     if OPENROUTER_KEY else None
 )
 
-LLM_FAUCET_KEY = os.getenv("LLM_FAUCET_KEY")
-faucet_client = (
-    OpenAI(api_key=LLM_FAUCET_KEY, base_url="https://llmsolutions.top/v1")
-    if LLM_FAUCET_KEY else None
-)
-
 GROQ_MODELS = ["groq:qwen/qwen3-32b", "groq:llama-3.3-70b-versatile", "groq:llama-3.1-8b-instant"]
 GITHUB_MODELS = ["gpt-4o-mini", "phi-4-mini-instruct"]
 GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"]
-FAUCET_MODELS = ["faucet:dsv4-fast", "faucet:l4-maverick", "faucet:k2.6-fast", "faucet:gpt-oss-fast", "faucet:l3.3-70b-fast"]
 OPENAI_MODELS = []
 OPENROUTER_MODELS = []
 NORMAL_CHAT_MODELS = [
@@ -172,7 +165,7 @@ def wrap_text(text):
 
 async def safe_completion(model, messages):
     loop = asyncio.get_event_loop()
-    _timeout = 30 if model.startswith("faucet:") else 12
+    _timeout = 12
 
     async def run(fn):
         try:
@@ -220,18 +213,6 @@ async def safe_completion(model, messages):
                 return wrap_text(strip_reasoning(extract_text(model, r)))
             except Exception as e:
                 log(f"[GITHUB FAIL:{actual}] {e}")
-                return None
-        return await run(call)
-
-    if model.startswith("faucet:"):
-        if not faucet_client: return None
-        actual = model.split("faucet:", 1)[1]
-        def call():
-            try:
-                r = faucet_client.chat.completions.create(model=actual, messages=messages, max_tokens=250, temperature=1.1)
-                return wrap_text(strip_reasoning(extract_text(model, r)))
-            except Exception as e:
-                log(f"[FAUCET FAIL:{actual}] {e}")
                 return None
         return await run(call)
 
@@ -415,8 +396,6 @@ async def gather_all_llm_roasts(prompt, user_id):
     ]
     tasks = []
     sources = []
-    for m in FAUCET_MODELS:
-        tasks.append(safe_completion(m, context)); sources.append(f"FAUCET:{m.split(':', 1)[1]}")
     for m in GEMINI_MODELS:
         tasks.append(safe_completion(m, context)); sources.append(f"GM:{m}")
     for m in GROQ_MODELS:
