@@ -168,6 +168,8 @@ The bot runs on GitHub Actions on a 6-hour cron. When the job ends, state files 
 <details>
 <summary><b>🏰 Deep Modes</b></summary>
 
+**Complicated to use!**
+
 | Command | Description |
 |---|---|
 | `/fus_dungeon` | Enter the dungeon RPG |
@@ -181,6 +183,8 @@ The bot runs on GitHub Actions on a 6-hour cron. When the job ends, state files 
 
 <details>
 <summary><b>💻 Hack & Codepad</b></summary>
+
+**Complicated to use!**
 
 | Command | Description |
 |---|---|
@@ -261,6 +265,8 @@ The bot runs on GitHub Actions on a 6-hour cron. When the job ends, state files 
 
 <details>
 <summary><b>🛡️ AutoMod</b></summary>
+
+**Complicated to use!**
 
 | Command | Description |
 |---|---|
