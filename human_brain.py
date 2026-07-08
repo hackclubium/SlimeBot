@@ -1234,6 +1234,13 @@ class BrainRuntime:
         self._task_started = False
         self._running = True
 
+    async def _delayed_react_slack(self, uid: str, channel_id: str, team_id: str, content: str, ts: str, mentioned: bool) -> None:
+        await asyncio.sleep(self.brain._rng.uniform(3, 90))
+        try:
+            await self.brain.maybe_react_slack(uid, channel_id, team_id, content, ts, mentioned, self.client)
+        except Exception:
+            pass
+
     async def on_message_slack(self, uid: str, channel_id: str, team_id: str, text: str, ts: str, bot_user_id: str, say, user_account_id: str = None) -> Optional[str]:
         content = (text or "").strip()
         if not content:
@@ -1248,14 +1255,14 @@ class BrainRuntime:
         if content and not content[0] in IGNORE_PREFIXES:
             self.brain.observe_channel_message(channel_id, content, ts)
 
+        asyncio.ensure_future(self._delayed_react_slack(uid, channel_id, team_id, content, ts, mentioned))
+
         if not mentioned:
-            # ping-only: still collect data above, but no reactions or replies unprompted
+            # ping-only: reactions above still fire, but no replies unprompted
             self.outcomes.observe_message_slack(uid, channel_id)
             self.brain.self_reflect()
             self.brain.maybe_persist()
             return None
-
-        await self.brain.maybe_react_slack(uid, channel_id, team_id, content, ts, mentioned, self.client)
 
         intent = _mention_intent(content)
         mode = self.get_roast_mode(uid)

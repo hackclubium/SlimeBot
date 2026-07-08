@@ -1,9 +1,6 @@
 ﻿import unittest
 
-from slimebot_routing import (
-    allowed_in_workspace_channel,
-    build_roast_request,
-)
+from slimebot_routing import build_roast_request
 
 
 class RoastRoutingTests(unittest.TestCase):
@@ -40,39 +37,6 @@ class RoastRoutingTests(unittest.TestCase):
 
         self.assertEqual(request.target_user_ids, ["UTELLER"])
         self.assertIn("UTELLER", request.prompt)
-
-
-class WorkspaceChannelPolicyTests(unittest.TestCase):
-    def test_blocks_every_bot_response_outside_allowed_channel_in_workspace(self):
-        self.assertFalse(
-            allowed_in_workspace_channel(
-                team_id="TWORK",
-                enterprise_id="",
-                channel_id="CWRONG",
-                allowed_workspace_id="TWORK",
-                allowed_channel_id="CALLOWED",
-            )
-        )
-
-    def test_allows_configured_channel_and_other_workspaces(self):
-        self.assertTrue(
-            allowed_in_workspace_channel(
-                team_id="TWORK",
-                enterprise_id="",
-                channel_id="CALLOWED",
-                allowed_workspace_id="TWORK",
-                allowed_channel_id="CALLOWED",
-            )
-        )
-        self.assertTrue(
-            allowed_in_workspace_channel(
-                team_id="TOTHER",
-                enterprise_id="",
-                channel_id="CWRONG",
-                allowed_workspace_id="TWORK",
-                allowed_channel_id="CALLOWED",
-            )
-        )
 
 
 if __name__ == "__main__":

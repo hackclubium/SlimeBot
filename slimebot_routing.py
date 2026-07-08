@@ -53,16 +53,3 @@ def build_roast_request(text: str, teller_user_id: str, bot_user_id: str = "") -
     else:
         prompt = f"Target to roast: {target_list}. {target_guard}"
     return RoastRequest(target_user_ids=target_ids, prompt=prompt)
-
-
-def allowed_in_workspace_channel(
-    team_id: str,
-    enterprise_id: str,
-    channel_id: str,
-    allowed_workspace_id: str,
-    allowed_channel_id: str,
-) -> bool:
-    if not allowed_workspace_id or not allowed_channel_id:
-        return True
-    in_workspace = enterprise_id == allowed_workspace_id or team_id == allowed_workspace_id
-    return not in_workspace or channel_id == allowed_channel_id

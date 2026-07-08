@@ -25,7 +25,7 @@ load_state()
 from economy_shared import state, save_state
 from economy import get_user
 from slack_utils import parse_slack_mentions, slack_mention
-from slimebot_routing import allowed_in_workspace_channel, build_roast_request
+from slimebot_routing import build_roast_request
 
 CHAT_HISTORY = defaultdict(lambda: deque(maxlen=10))
 
@@ -926,13 +926,6 @@ async def handle_message(event, say, client, context):
     channel_id = event.get("channel", "")
     ts = event.get("ts", "")
     team_id = context.get("team_id", "") or event.get("team", "")
-    enterprise_id = context.get("enterprise_id", "")
-
-    # restrict bot speaking/observing to one channel in a specific workspace/enterprise
-    _allowed_workspace = os.getenv("ALLOWED_WORKSPACE_ID", "")
-    _allowed_channel = os.getenv("ALLOWED_CHANNEL_ID", "")
-    if not allowed_in_workspace_channel(team_id, enterprise_id, channel_id, _allowed_workspace, _allowed_channel):
-        return
 
     # update user memory
     try:
