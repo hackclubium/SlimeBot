@@ -972,6 +972,7 @@ async def handle_message(event, say, client, context):
             ts=ts,
             bot_user_id=bot_user_id,
             say=lambda text: user_client.chat_postMessage(channel=channel_id, text=text),
+            user_account_id=user_account_id,
         )
 
 
@@ -1028,6 +1029,7 @@ async def main():
         try:
             auth = await user_client.auth_test()
             user_account_id = auth["user_id"]
+            print(f"[USER] auth_test ok, user_account_id={user_account_id}")
             asyncio.ensure_future(_keep_user_presence_active())
         except Exception as e:
             print(f"[USER] auth_test failed, pings to user account won't trigger replies: {e}")

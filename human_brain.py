@@ -1234,12 +1234,16 @@ class BrainRuntime:
         self._task_started = False
         self._running = True
 
-    async def on_message_slack(self, uid: str, channel_id: str, team_id: str, text: str, ts: str, bot_user_id: str, say) -> Optional[str]:
+    async def on_message_slack(self, uid: str, channel_id: str, team_id: str, text: str, ts: str, bot_user_id: str, say, user_account_id: str = None) -> Optional[str]:
         content = (text or "").strip()
         if not content:
             return None
 
-        mentioned = mentions_slimebot(content) or (bot_user_id and f"<@{bot_user_id}>" in content)
+        mentioned = (
+            mentions_slimebot(content)
+            or (bot_user_id and f"<@{bot_user_id}>" in content)
+            or (user_account_id and f"<@{user_account_id}>" in content)
+        )
 
         if content and not content[0] in IGNORE_PREFIXES:
             self.brain.observe_channel_message(channel_id, content, ts)
