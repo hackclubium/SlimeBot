@@ -8,10 +8,13 @@ import google.generativeai as genai
 from groq import Groq
 from openai import OpenAI
 
-groq_client = Groq(api_key=os.getenv("GROQ"))
-openrouter_client = OpenAI(
-    api_key=os.getenv("OPENROUTER_KEY"),
-    base_url="https://openrouter.ai/api/v1",
+groq_client = Groq(api_key=os.getenv("GROQ")) if os.getenv("GROQ") else None
+openrouter_client = (
+    OpenAI(
+        api_key=os.getenv("OPENROUTER_KEY"),
+        base_url="https://openrouter.ai/api/v1",
+    )
+    if os.getenv("OPENROUTER_KEY") else None
 )
 github_client = (
     OpenAI(api_key=os.getenv("GITHUB"), base_url="https://models.inference.ai.azure.com")
