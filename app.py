@@ -483,13 +483,6 @@ async def typing_indicator(channel_id: str, client, coro):
 
 # ── Web search ──────────────────────────────────────────────────────────────────
 
-SEARCH_TRIGGER_RE = re.compile(
-    r"\b(latest|newest|recent|today|right now|currently|this (week|month|year)|"
-    r"who (is|won|are)|what(?:'s| is) (the )?(latest|new|current)|search for|"
-    r"look up|google|news about|score|update on|price of|weather)\b",
-    re.IGNORECASE,
-)
-
 async def web_search(query: str, max_results: int = 4) -> str:
     """DuckDuckGo HTML search, no API key needed. Returns a short text block or ''."""
     try:
@@ -530,10 +523,9 @@ async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None
         )
 
     search_hint = ""
-    if SEARCH_TRIGGER_RE.search(msg):
-        results = await web_search(msg)
-        if results:
-            search_hint = f"live web search results for this question:\n{results}\nuse these to answer if relevant, in your own words, no links.\n"
+    results = await web_search(msg)
+    if results:
+        search_hint = f"live web search results for this question:\n{results}\nuse these to answer if relevant, in your own words, no links.\n"
 
     messages = [
         {
