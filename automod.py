@@ -1,42 +1,25 @@
 import time
 import re
-import json
-import os
 import datetime
 from collections import defaultdict, deque
 
-AUTOMOD_FILE = "automod_config.json"
-OFFENCES_FILE = "automod_offences.json"
+from redis_store import redis_get_json, redis_set_json
+
+AUTOMOD_KEY = "slimebot:automod_config"
+OFFENCES_KEY = "slimebot:automod_offences"
 
 _ADMIN_USER_IDS: set[str] = set()
 
 
-def _load_json(path: str, default):
-    if not os.path.exists(path):
-        return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return default
-
-
-def _save_json(path: str, data):
-    tmp = path + ".tmp"
-    with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-    os.replace(tmp, path)
-
-
-AUTOMOD_DATA = _load_json(AUTOMOD_FILE, {})
+AUTOMOD_DATA = redis_get_json(AUTOMOD_KEY, {})
 
 
 def save_automod():
-    _save_json(AUTOMOD_FILE, AUTOMOD_DATA)
+    redis_set_json(AUTOMOD_KEY, AUTOMOD_DATA)
 
 
 def load_offences():
-    raw = _load_json(OFFENCES_FILE, {})
+    raw = redis_get_json(OFFENCES_KEY, {})
     out: dict[str, dict[str, int]] = {}
     for ws, users in raw.items():
         out[ws] = {uid: int(v) for uid, v in users.items()}
@@ -44,7 +27,7 @@ def load_offences():
 
 
 def save_offences(offences: dict[str, dict[str, int]]):
-    _save_json(OFFENCES_FILE, offences)
+    redis_set_json(OFFENCES_KEY, offences)
 
 
 def censor_word(w: str) -> str:

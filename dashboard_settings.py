@@ -55,7 +55,7 @@ def _deep_merge(defaults, incoming):
 
 
 def guild_settings_key(guild_id: int | str) -> str:
-    return f"fusbot:guild:{guild_id}:settings"
+    return f"slimebot:guild:{guild_id}:settings"
 
 
 async def _redis_command(*parts):

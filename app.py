@@ -19,6 +19,7 @@ import google.generativeai as genai
 
 from human_brain import BrainRuntime
 from mentions import mentions_fusbot
+from redis_store import redis_get_json, redis_set_json
 from economy_shared import load_state
 load_state()
 from economy_shared import state, save_state
@@ -35,16 +36,10 @@ MIN_DEEP_SPICE = 25
 
 AUTO_ROAST_BOT_IDS: set[str] = set()
 
-MEMORY_FILE = "roast_memory.json"
+MEMORY_KEY = "slimebot:roast_memory"
 
 def load_roast_memory():
-    if not os.path.exists(MEMORY_FILE):
-        return {"user_memory": {}, "roast_history": {}, "auto_roast": {}, "roast_mode": {}, "spice_cache": {}}
-    try:
-        with open(MEMORY_FILE, "r") as f:
-            return json.load(f)
-    except Exception:
-        return {"user_memory": {}, "roast_history": {}, "auto_roast": {}, "roast_mode": {}, "spice_cache": {}}
+    return redis_get_json(MEMORY_KEY, {"user_memory": {}, "roast_history": {}, "auto_roast": {}, "roast_mode": {}, "spice_cache": {}})
 
 def save_roast_memory():
     mem = {
@@ -54,8 +49,7 @@ def save_roast_memory():
         "roast_mode": roast_mode,
         "spice_cache": spice_cache
     }
-    with open(MEMORY_FILE, "w") as f:
-        json.dump(mem, f, indent=2)
+    redis_set_json(MEMORY_KEY, mem)
 
 def log(*msg):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

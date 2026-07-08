@@ -1,15 +1,15 @@
 import datetime
-import json
 import os
 from typing import Any
 
+from redis_store import redis_get_json
 from economy_shared import load_state, state
 from economy import get_user
 from slack_utils import make_blocks, section_block, header_block, divider_block
 
 load_state()
 
-ROAST_MEMORY_FILE = "roast_memory.json"
+MEMORY_KEY = "slimebot:roast_memory"
 
 
 def _now_utc() -> datetime.datetime:
@@ -161,13 +161,7 @@ def _battled_today(user: dict) -> bool:
 
 
 def _load_roast_memory() -> dict:
-    if not os.path.exists(ROAST_MEMORY_FILE):
-        return {}
-    try:
-        with open(ROAST_MEMORY_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return {}
+    return redis_get_json(MEMORY_KEY, {})
 
 
 def _is_ai_heavy(uid: str) -> bool:

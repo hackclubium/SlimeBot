@@ -15,9 +15,6 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-
     env:
       PYTHONUNBUFFERED: 1
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
@@ -29,15 +26,13 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI }}
       STABILITY_API_KEY: ${{ secrets.STABILITY_API_KEY }}
       REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
-      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}
       LLM_FAUCET_KEY: ${{ secrets.LLM_FAUCET_KEY }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.PAT_TOKEN }}
-          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -46,33 +41,12 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
+
       - name: Install libclang
         run: pip install libclang
-          
+
       - name: Run Slack Bot
         run: |
           echo "Starting bot..."
           python -u app.py
           echo "Bot run complete."
-
-      - name: Commit & Push bot state
-        if: always()
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-
-          git fetch origin main
-          git pull origin main --strategy-option theirs
-
-          git add state.json roast_memory.json human_brain_state.json \
-                  automod_config.json automod_offences.json \
-                  mixup_emojis.json emojimixup_data.json \
-                  data/ || true
-
-          if ! git diff --cached --quiet; then
-            git commit -m "Update bot state"
-            git push https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/${{ github.repository }} main
-          else
-            echo "No state changes to commit."
-          fi

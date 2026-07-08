@@ -2,12 +2,11 @@ import asyncio
 import time
 import random
 import math
-import json
-import os
 import re
 from mentions import mentions_fusbot
 from ai_interject import ai_interject_line
 from fusbot_routing import build_roast_request
+from redis_store import redis_get_json, redis_set_json
 from collections import defaultdict, deque, Counter
 from typing import Any, Awaitable, Dict, Deque, List, Tuple, Optional, Callable
 
@@ -220,38 +219,20 @@ def _sigmoid(x: float) -> float:
 
 
 class BrainStore:
-    def __init__(self, path: str):
-        self.path = path
+    def __init__(self, key: str):
+        self.key = key
         self.last_save = 0.0
 
     def load(self) -> Dict[str, Any]:
-        if not self.path or not os.path.exists(self.path):
-            return {}
-        try:
-            with open(self.path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            return {}
+        return redis_get_json(self.key, {})
 
     def save(self, data: Dict[str, Any]) -> None:
-        if not self.path:
-            return
-        tmp = self.path + ".tmp"
-        try:
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
-            os.replace(tmp, self.path)
-            self.last_save = _now()
-        except Exception:
-            try:
-                if os.path.exists(tmp):
-                    os.remove(tmp)
-            except Exception:
-                pass
+        redis_set_json(self.key, data)
+        self.last_save = _now()
 
 
 class HumanBrain:
-    def __init__(self, persist_path: str = "human_brain_state.json", is_roast_mode=None):
+    def __init__(self, persist_path: str = "slimebot:human_brain_state", is_roast_mode=None):
         self.store = BrainStore(persist_path)
         self._social_momentum: Dict[str, Deque[int]] = defaultdict(lambda: deque(maxlen=6))
         self._emoji_boredom_channel: Dict[str, Counter] = defaultdict(Counter)
@@ -1240,7 +1221,7 @@ class BrainRuntime:
         chat_fn: Callable,
         roast_fn: Callable,
         get_roast_mode: Callable,
-        persist_path: str = "human_brain_state.json",
+        persist_path: str = "slimebot:human_brain_state",
         is_roast_mode=None,
     ):
         self.client = client

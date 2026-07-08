@@ -73,7 +73,8 @@ Go to **Settings → Secrets → Actions** and add:
 | `SLACK_BOT_TOKEN` | `xoxb-…` bot token |
 | `SLACK_APP_TOKEN` | `xapp-…` socket mode token |
 | `HACKCLUB_AI_KEY` | Hack Club AI proxy key — primary chat/roast provider |
-| `PAT_TOKEN` | GitHub PAT for pushing state |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL — bot state storage |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token — bot state storage |
 | `GITHUB` | GitHub PAT for AI models *(fallback, optional)* |
 | `GROQ` | Groq API key *(fallback, optional)* |
 | `GEMINI_API_KEY` | Gemini API key *(fallback, optional)* |
@@ -95,7 +96,7 @@ python app.py
 
 ## How it works
 
-The bot runs on GitHub Actions on a 6-hour cron. When the job ends, state files (`state.json`, `roast_memory.json`, SQLite DBs, etc.) are committed back to the repo automatically so nothing is lost between runs.
+The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memory, automod config, etc.) persists to Upstash Redis, so nothing is lost between runs — no committing state files back to the repo. Monopoly still uses a local SQLite DB, which resets each run.
 
 ---
 

@@ -1,10 +1,11 @@
 import aiohttp
 import asyncio
-import json
 import random
 import io
 import time
 from pathlib import Path
+
+from redis_store import redis_get_json, redis_set_json
 
 DISCOVERY_DATES = ["20201001","20210218","20210521","20210831","20220203","20220823"]
 MAX_HISTORY = 25
@@ -12,8 +13,8 @@ MAX_FAVORITES = 50
 
 _BASE = Path(__file__).parent
 _EMOJIS_FILE = _BASE / "emojis.txt"
-_MIXUP_PATH = _BASE / "mixup_emojis.json"
-_DATA_PATH = _BASE / "emojimixup_data.json"
+_MIXUP_KEY = "slimebot:mixup_emojis"
+_DATA_KEY = "slimebot:emojimixup_data"
 
 _emojis: list[str] = []
 _mixups: dict[str, str] = {}
@@ -35,18 +36,16 @@ def _load():
     global _emojis, _mixups, _data
     if _EMOJIS_FILE.exists():
         _emojis = _EMOJIS_FILE.read_text(encoding="utf-8").splitlines()
-    if _MIXUP_PATH.exists():
-        _mixups = json.loads(_MIXUP_PATH.read_text(encoding="utf-8"))
-    if _DATA_PATH.exists():
-        _data = json.loads(_DATA_PATH.read_text(encoding="utf-8"))
+    _mixups = redis_get_json(_MIXUP_KEY, {})
+    _data = redis_get_json(_DATA_KEY, {"history": {}, "favorites": {}})
 
 
 def _save_data():
-    _DATA_PATH.write_text(json.dumps(_data, ensure_ascii=False, indent=2), encoding="utf-8")
+    redis_set_json(_DATA_KEY, _data)
 
 
 def _save_mixups():
-    _MIXUP_PATH.write_text(json.dumps(_mixups, ensure_ascii=False, indent=2), encoding="utf-8")
+    redis_set_json(_MIXUP_KEY, _mixups)
 
 
 async def _get_session() -> aiohttp.ClientSession:
