@@ -806,7 +806,7 @@ async def roast_cmd(ack, say, command, client):
             except Exception:
                 target_name = uid
             target_prompt = f"Roast {target_name}. One short roast line addressed directly to {target_name} only. Do not mention the instruction or prompt."
-            response = await bot_roast(target_prompt, uid, mode)
+            response = await typing_indicator(command["channel_id"], user_client, bot_roast(target_prompt, uid, mode))
             out.append(f"{slack_mention(uid)} {response}")
         final = "\n".join(x for x in out if x.strip()) or "Even all the models refused to roast."
         await user_client.chat_postMessage(channel=command["channel_id"], text=final)
@@ -815,7 +815,7 @@ async def roast_cmd(ack, say, command, client):
     if text:
         # plain text roast — no target, roast is about the message content
         request = build_roast_request(text, user_id)
-        resp = await bot_roast(request.prompt, user_id, mode)
+        resp = await typing_indicator(command["channel_id"], user_client, bot_roast(request.prompt, user_id, mode))
         if not resp or not resp.strip():
             resp = "Even the AI models said 'nah bro I'm good'."
         await user_client.chat_postMessage(channel=command["channel_id"], text=f"{slack_mention(user_id)} {resp}")
@@ -957,7 +957,7 @@ async def handle_message(event, say, client, context):
         request = build_roast_request(text, uid, bot_user_id)
         target_uid = request.target_user_ids[0]
         mode = roast_mode.get(uid, "deep")
-        reply = await typing_indicator(channel_id, client, bot_roast(request.prompt, target_uid, mode))
+        reply = await typing_indicator(channel_id, user_client, bot_roast(request.prompt, target_uid, mode))
         if reply:
             await user_client.chat_postMessage(channel=channel_id, text=f"{slack_mention(target_uid)} {reply}")
         return
@@ -971,7 +971,7 @@ async def handle_message(event, say, client, context):
             text=text,
             ts=ts,
             bot_user_id=bot_user_id,
-            say=lambda text: user_client.chat_postMessage(channel=channel_id, text=text),
+            say=lambda text: typing_indicator(channel_id, user_client, user_client.chat_postMessage(channel=channel_id, text=text)),
             user_account_id=user_account_id,
         )
 
