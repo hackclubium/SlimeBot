@@ -741,6 +741,7 @@ Your output must contain ONLY the roast line. Nothing before it. Nothing after i
 app = AsyncApp(token=os.environ.get("SLACK_BOT_TOKEN"))
 # ponytail: bot token drives slash commands/Socket Mode; user token is the "voice" (messages+reactions)
 user_client = AsyncWebClient(token=os.environ.get("SLACK_USER_TOKEN"))
+user_account_id = None  # resolved at startup via auth_test — the personal account's own Slack user ID
 
 brain_runtime: BrainRuntime = None  # initialized in startup
 
@@ -947,8 +948,9 @@ async def handle_message(event, say, client, context):
     # check if bot is mentioned
     bot_user_id = context.get("bot_user_id", "")
     bot_mentioned = bool(bot_user_id and f"<@{bot_user_id}>" in text)
+    user_mentioned = bool(user_account_id and f"<@{user_account_id}>" in text)
     alias_mentioned = mentions_slimebot(text)
-    mentioned = bot_mentioned or alias_mentioned
+    mentioned = bot_mentioned or user_mentioned or alias_mentioned
 
     # auto-roast when mentioned in auto-roast channel
     if mentioned and auto_roast.get(channel_id):
@@ -1010,7 +1012,14 @@ async def load_extensions():
 # ── Startup ────────────────────────────────────────────────────────────────────
 
 async def main():
+    global user_account_id
     client = AsyncWebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+    if os.environ.get("SLACK_USER_TOKEN"):
+        try:
+            auth = await user_client.auth_test()
+            user_account_id = auth["user_id"]
+        except Exception as e:
+            print(f"[USER] auth_test failed, pings to user account won't trigger replies: {e}")
     _init_brain(client)
     await load_extensions()
     brain_runtime.start()
