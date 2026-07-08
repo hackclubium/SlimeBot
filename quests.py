@@ -74,7 +74,7 @@ class QuestBoard:
         root = cls.state_root()
         today = cls.today_key()
         if uid not in root or root[uid].get("day") != today:
-            rng = random.Random(f"{uid}:{today}:fusquests")
+            rng = random.Random(f"{uid}:{today}:slimequests")
             picks = rng.sample(cls.QUEST_POOL, k=min(3, len(cls.QUEST_POOL)))
             root[uid] = {"day": today, "quest_ids": [q["id"] for q in picks], "claimed": []}
             save_state()
