@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import aiohttp
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageChops, ImageEnhance
@@ -377,7 +377,7 @@ async def render(uid: str, display_name: str, badge: str, client) -> BytesIO:
 
 
 async def setup(app):
-    @app.command("/fus_badge")
+    @app.command("/slime_badge")
     async def badge_cmd(ack, command, client, respond):
         await ack()
         uid = command["user_id"]

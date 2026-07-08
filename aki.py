@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import asyncio
 import akinator
 import akinator.async_client as _aki_mod
@@ -94,7 +94,7 @@ async def _handle_answer(body, client, answer: str):
 
 async def setup(app):
 
-    @app.command("/fus_aki")
+    @app.command("/slime_aki")
     async def aki_cmd(ack, command, client):
         await ack()
         uid = command["user_id"]

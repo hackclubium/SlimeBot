@@ -1,4 +1,4 @@
-import time
+﻿import time
 import re
 import datetime
 from collections import defaultdict, deque
@@ -207,7 +207,7 @@ async def setup(app):
             except Exception:
                 pass
 
-    @app.command("/fus_automod")
+    @app.command("/slime_automod")
     async def automod_cmd(ack, command, respond):
         await ack()
         import re as re_mod
@@ -227,7 +227,7 @@ async def setup(app):
         elif action == "reset":
             m = re_mod.search(r"<@([A-Z0-9]+)>", rest)
             if not m:
-                return await respond(text="Usage: `/fus_automod reset @user`", response_type="ephemeral")
+                return await respond(text="Usage: `/slime_automod reset @user`", response_type="ephemeral")
             uid = m.group(1)
             if uid in ENGINE.offences.get(workspace_id, {}):
                 ENGINE.offences[workspace_id][uid] = 0
@@ -239,7 +239,7 @@ async def setup(app):
         elif action == "punishment":
             sub = rest.split()
             if len(sub) < 2:
-                return await respond(text="Usage: `/fus_automod punishment <level> <warn|kick|ban|timeout:minutes>`", response_type="ephemeral")
+                return await respond(text="Usage: `/slime_automod punishment <level> <warn|kick|ban|timeout:minutes>`", response_type="ephemeral")
             try:
                 level = int(sub[0])
             except Exception:
@@ -282,7 +282,7 @@ async def setup(app):
         elif action == "spam":
             sub = rest.split(None, 1)
             if len(sub) < 2:
-                return await respond(text="Usage: `/fus_automod spam <setting> <value>`", response_type="ephemeral")
+                return await respond(text="Usage: `/slime_automod spam <setting> <value>`", response_type="ephemeral")
             setting, value = sub
             cfg = ENGINE.get_cfg(workspace_id); spam = cfg["spam"]
             if setting not in spam:
@@ -297,7 +297,7 @@ async def setup(app):
         elif action == "filters":
             sub = rest.split(None, 1)
             if len(sub) < 2:
-                return await respond(text="Usage: `/fus_automod filters <block_invites|block_links> <on|off>`", response_type="ephemeral")
+                return await respond(text="Usage: `/slime_automod filters <block_invites|block_links> <on|off>`", response_type="ephemeral")
             filter_name, mode = sub
             cfg = ENGINE.get_cfg(workspace_id)
             if filter_name not in cfg["filters"]:
@@ -308,7 +308,7 @@ async def setup(app):
         elif action == "settings":
             sub = rest.split(None, 1)
             if len(sub) < 2:
-                return await respond(text="Usage: `/fus_automod settings <delete|cooldown_seconds> <value>`", response_type="ephemeral")
+                return await respond(text="Usage: `/slime_automod settings <delete|cooldown_seconds> <value>`", response_type="ephemeral")
             setting, value = sub
             cfg = ENGINE.get_cfg(workspace_id)
             if setting not in {"delete", "cooldown_seconds"}:

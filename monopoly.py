@@ -1,4 +1,4 @@
-import json, math, os, random, sqlite3, io
+﻿import json, math, os, random, sqlite3, io
 from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -629,7 +629,7 @@ async def _handle_action(ack, body, client, action):
 async def setup(app):
     _db("CREATE TABLE IF NOT EXISTS games (channel_id TEXT PRIMARY KEY, state_json TEXT)")
 
-    @app.command("/fus_monopoly")
+    @app.command("/slime_monopoly")
     async def monopoly_cmd(ack, command, client):
         await ack()
         uid = command["user_id"]; channel = command["channel_id"]
@@ -640,7 +640,7 @@ async def setup(app):
         if action in ("start", ""):
             import re as re_mod
             if channel in _games:
-                await client.chat_postEphemeral(channel=channel, user=uid, text="a game is already running here — use `/fus_monopoly stop` first"); return
+                await client.chat_postEphemeral(channel=channel, user=uid, text="a game is already running here — use `/slime_monopoly stop` first"); return
             m = re_mod.search(r"<@([A-Z0-9]+)>", arg)
             players = [PlayerSlot(uid)]
             if m:
@@ -675,7 +675,7 @@ async def setup(app):
                 game["ts"] = await _advance_ai(client, channel, engine, uid, ts)
 
         else:
-            await client.chat_postEphemeral(channel=channel, user=uid, text="usage: `/fus_monopoly [start [@opponent] | stop | resume]`")
+            await client.chat_postEphemeral(channel=channel, user=uid, text="usage: `/slime_monopoly [start [@opponent] | stop | resume]`")
 
     @app.action("mono_roll")
     async def mono_roll(ack, body, client): await _handle_action(ack, body, client, "roll")

@@ -1,4 +1,4 @@
-import random
+﻿import random
 from economy_shared import state, save_state
 from economy import get_user, update_balance, get_balance, get_pray_boost
 
@@ -46,7 +46,7 @@ async def _refresh(client, channel, ts, uid, lab, world):
 
 async def setup(app):
 
-    @app.command("/fus_lab")
+    @app.command("/slime_lab")
     async def lab_cmd(ack, command, client):
         await ack()
         uid = command["user_id"]; channel = command["channel_id"]

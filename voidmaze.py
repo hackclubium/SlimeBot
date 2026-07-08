@@ -1,4 +1,4 @@
-import random
+﻿import random
 import asyncio
 from economy_shared import state, save_state
 from economy import get_user, update_balance, get_pray_boost, get_balance
@@ -310,7 +310,7 @@ async def _do_room(uid, vm, world, room_type, client, channel, ts):
 
 async def setup(app):
 
-    @app.command("/fus_voidmaze")
+    @app.command("/slime_voidmaze")
     async def voidmaze_cmd(ack, command, client):
         await ack()
         uid = command["user_id"]; channel = command["channel_id"]

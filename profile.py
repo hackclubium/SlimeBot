@@ -1,4 +1,4 @@
-import datetime
+﻿import datetime
 from economy import get_user
 
 try:
@@ -182,7 +182,7 @@ def _build_profile_text(uid: str, data: dict, display_name: str) -> str:
 
 async def setup(app):
 
-    @app.command("/fus_profile")
+    @app.command("/slime_profile")
     async def profile(ack, command, client, respond):
         await ack()
         import re as re_mod

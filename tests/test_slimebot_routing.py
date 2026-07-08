@@ -1,6 +1,6 @@
-import unittest
+﻿import unittest
 
-from fusbot_routing import (
+from slimebot_routing import (
     allowed_in_workspace_channel,
     build_roast_request,
 )

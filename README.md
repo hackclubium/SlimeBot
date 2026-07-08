@@ -1,4 +1,4 @@
-# FuSBot
+﻿# slimebot
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![Slack](https://img.shields.io/badge/Slack-Bolt-4A154B?logo=slack&logoColor=white)
@@ -107,10 +107,10 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_roast @user` | AI-roast someone using memory + multi-model scoring |
-| `/fus_roastmode fast\|deep\|adjustable\|off` | Set roast style — `off` exits roast mode |
-| `/fus_autor on\|off` | Auto-roast anyone who mentions the bot in this channel |
-| `/fus_data [@user]` | View stored memory profile |
+| `/slime_roast @user` | AI-roast someone using memory + multi-model scoring |
+| `/slime_roastmode fast\|deep\|adjustable\|off` | Set roast style — `off` exits roast mode |
+| `/slime_autor on\|off` | Auto-roast anyone who mentions the bot in this channel |
+| `/slime_data [@user]` | View stored memory profile |
 
 </details>
 
@@ -119,16 +119,16 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_balance [@user]` | Check balance |
-| `/fus_daily` | Claim daily reward |
-| `/fus_work` | Work a job for horsenncy |
-| `/fus_give @user amount` | Transfer horsenncy |
-| `/fus_pray` | Gain a prayer boost |
-| `/fus_leaderboard` | Top 10 richest |
-| `/fus_coinflip amount [heads\|tails]` | 50/50 gamble |
-| `/fus_blackjack amount` | Full blackjack game |
-| `/fus_slots amount` | 3×3 slot machine |
-| `/fus_crime` | High-risk heist |
+| `/slime_balance [@user]` | Check balance |
+| `/slime_daily` | Claim daily reward |
+| `/slime_work` | Work a job for horsenncy |
+| `/slime_give @user amount` | Transfer horsenncy |
+| `/slime_pray` | Gain a prayer boost |
+| `/slime_leaderboard` | Top 10 richest |
+| `/slime_coinflip amount [heads\|tails]` | 50/50 gamble |
+| `/slime_blackjack amount` | Full blackjack game |
+| `/slime_slots amount` | 3×3 slot machine |
+| `/slime_crime` | High-risk heist |
 
 </details>
 
@@ -137,10 +137,10 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_shop` | Browse all items |
-| `/fus_buy item [amount]` | Purchase an item |
-| `/fus_inventory [@user]` | View items |
-| `/fus_use item` | Use an item |
+| `/slime_shop` | Browse all items |
+| `/slime_buy item [amount]` | Purchase an item |
+| `/slime_inventory [@user]` | View items |
+| `/slime_use item` | Use an item |
 
 </details>
 
@@ -149,9 +149,9 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_stocks` | View market prices and your portfolio |
-| `/fus_stocks buy SYMBOL amount` | Buy shares |
-| `/fus_stocks sell SYMBOL amount` | Sell shares |
+| `/slime_stocks` | View market prices and your portfolio |
+| `/slime_stocks buy SYMBOL amount` | Buy shares |
+| `/slime_stocks sell SYMBOL amount` | Sell shares |
 
 </details>
 
@@ -160,10 +160,10 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_hunt` | Hunt one of 130+ creatures |
-| `/fus_fish` | Fish for aquatic creatures |
-| `/fus_battle [@user]` | Fight a monster or player |
-| `/fus_team list\|add\|remove` | Manage your battle team |
+| `/slime_hunt` | Hunt one of 130+ creatures |
+| `/slime_fish` | Fish for aquatic creatures |
+| `/slime_battle [@user]` | Fight a monster or player |
+| `/slime_team list\|add\|remove` | Manage your battle team |
 
 </details>
 
@@ -174,12 +174,12 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_dungeon` | Enter the dungeon RPG |
-| `/fus_voidmaze` | Enter the void maze roguelite |
-| `/fus_arena` | Enter the auto-battler arena |
-| `/fus_arena buy might\|haste\|ward\|luck` | Buy an arena upgrade with crowns |
-| `/fus_arena setteam name1, name2, …` | Set your arena team (up to 5) |
-| `/fus_lab` | Enter the research lab |
+| `/slime_dungeon` | Enter the dungeon RPG |
+| `/slime_voidmaze` | Enter the void maze roguelite |
+| `/slime_arena` | Enter the auto-battler arena |
+| `/slime_arena buy might\|haste\|ward\|luck` | Buy an arena upgrade with crowns |
+| `/slime_arena setteam name1, name2, …` | Set your arena team (up to 5) |
+| `/slime_lab` | Enter the research lab |
 
 </details>
 
@@ -190,17 +190,17 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_hack <target>` | Run a 4-phase hacking sim |
-| `/fus_hack profile [@user]` | View hack stats |
-| `/fus_hack targets` | List available targets |
-| `/fus_hack chaos <target>` | Trigger chaos hack (max difficulty) |
-| `/fus_hack state` | View current chaos resonance |
-| `/fus_code new <file>` | Create a code file |
-| `/fus_code edit <file>` | Edit a file via modal |
-| `/fus_code view <file>` | View a file |
-| `/fus_code list` | List your files |
-| `/fus_code delete <file>` | Delete a file |
-| `/fus_code run <file>` | Run a file |
+| `/slime_hack <target>` | Run a 4-phase hacking sim |
+| `/slime_hack profile [@user]` | View hack stats |
+| `/slime_hack targets` | List available targets |
+| `/slime_hack chaos <target>` | Trigger chaos hack (max difficulty) |
+| `/slime_hack state` | View current chaos resonance |
+| `/slime_code new <file>` | Create a code file |
+| `/slime_code edit <file>` | Edit a file via modal |
+| `/slime_code view <file>` | View a file |
+| `/slime_code list` | List your files |
+| `/slime_code delete <file>` | Delete a file |
+| `/slime_code run <file>` | Run a file |
 
 </details>
 
@@ -209,14 +209,14 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_battleship [@user \| ai diff]` | Start a game |
-| `/fus_bs place A0 r\|d` | Place your next ship |
-| `/fus_bs fire B5` | Fire at a coordinate |
-| `/fus_bs status` | View your boards |
-| `/fus_bs forfeit` | Forfeit |
-| `/fus_bs resume` | Resume a saved game |
-| `/fus_bs stats [@user]` | Win/loss/ELO stats |
-| `/fus_bs leaderboard` | ELO leaderboard |
+| `/slime_battleship [@user \| ai diff]` | Start a game |
+| `/slime_bs place A0 r\|d` | Place your next ship |
+| `/slime_bs fire B5` | Fire at a coordinate |
+| `/slime_bs status` | View your boards |
+| `/slime_bs forfeit` | Forfeit |
+| `/slime_bs resume` | Resume a saved game |
+| `/slime_bs stats [@user]` | Win/loss/ELO stats |
+| `/slime_bs leaderboard` | ELO leaderboard |
 
 </details>
 
@@ -225,9 +225,9 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_monopoly start [@opponent]` | Start a game (vs player or AI) |
-| `/fus_monopoly stop` | End the current game |
-| `/fus_monopoly resume` | Resume a saved game |
+| `/slime_monopoly start [@opponent]` | Start a game (vs player or AI) |
+| `/slime_monopoly stop` | End the current game |
+| `/slime_monopoly resume` | Resume a saved game |
 
 </details>
 
@@ -236,16 +236,16 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_guild create name` | Create a guild |
-| `/fus_guild join id` | Join a guild |
-| `/fus_guild leave` | Leave your guild |
-| `/fus_guild info [id]` | View guild info |
-| `/fus_guild deposit amount` | Deposit to guild bank |
-| `/fus_guild upgrade` | Upgrade guild level |
-| `/fus_auction sell item amount price` | List an item |
-| `/fus_auction browse` | Browse listings |
-| `/fus_auction buy id` | Buy a listing |
-| `/fus_auction cancel id` | Cancel your listing |
+| `/slime_guild create name` | Create a guild |
+| `/slime_guild join id` | Join a guild |
+| `/slime_guild leave` | Leave your guild |
+| `/slime_guild info [id]` | View guild info |
+| `/slime_guild deposit amount` | Deposit to guild bank |
+| `/slime_guild upgrade` | Upgrade guild level |
+| `/slime_auction sell item amount price` | List an item |
+| `/slime_auction browse` | Browse listings |
+| `/slime_auction buy id` | Buy a listing |
+| `/slime_auction cancel id` | Cancel your listing |
 
 </details>
 
@@ -254,14 +254,14 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_quests [@user]` | View daily quest board |
-| `/fus_quests claim slot` | Claim a completed quest |
-| `/fus_profile [@user]` | View full profile |
-| `/fus_profile achievements [@user]` | View achievement progress |
-| `/fus_profile collections [@user]` | View collector stats |
-| `/fus_titles [@user]` | View unlocked titles |
-| `/fus_titles equip title` | Equip a title |
-| `/fus_badge [@user]` | View badges |
+| `/slime_quests [@user]` | View daily quest board |
+| `/slime_quests claim slot` | Claim a completed quest |
+| `/slime_profile [@user]` | View full profile |
+| `/slime_profile achievements [@user]` | View achievement progress |
+| `/slime_profile collections [@user]` | View collector stats |
+| `/slime_titles [@user]` | View unlocked titles |
+| `/slime_titles equip title` | Equip a title |
+| `/slime_badge [@user]` | View badges |
 
 </details>
 
@@ -272,14 +272,14 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_automod` | View current settings |
-| `/fus_automod on\|off` | Enable or disable automod |
-| `/fus_automod reset @user` | Reset a user's offence count |
-| `/fus_automod punishment level action` | Set punishment for a level |
-| `/fus_automod slurs list\|add\|remove` | Manage slur filter |
-| `/fus_automod spam setting value` | Configure spam thresholds |
-| `/fus_automod filters name on\|off` | Toggle a filter |
-| `/fus_automod settings key value` | Adjust misc settings |
+| `/slime_automod` | View current settings |
+| `/slime_automod on\|off` | Enable or disable automod |
+| `/slime_automod reset @user` | Reset a user's offence count |
+| `/slime_automod punishment level action` | Set punishment for a level |
+| `/slime_automod slurs list\|add\|remove` | Manage slur filter |
+| `/slime_automod spam setting value` | Configure spam thresholds |
+| `/slime_automod filters name on\|off` | Toggle a filter |
+| `/slime_automod settings key value` | Adjust misc settings |
 
 </details>
 
@@ -288,19 +288,19 @@ The bot runs on GitHub Actions on a 6-hour cron. All state (economy, roast memor
 
 | Command | Description |
 |---|---|
-| `/fus_aki` | Play Akinator |
-| `/fus_animal` | Random animal fact |
-| `/fus_emojimixup` | Mix up emoji meanings |
-| `/fus_rave` | Start a rave |
-| `/fus_rave bg <key>` | Set rave background video |
-| `/fus_img prompt` | Generate an image |
-| `/fus_afk [message]` | Set AFK status |
-| `/fus_recommend` | Get a personalised activity suggestion |
-| `/fus_help [topic\|start]` | Help guide — use `start` for the beginner guide |
-| `/fus_setup view\|channel\|tips\|post\|reset` | Workspace setup |
+| `/slime_aki` | Play Akinator |
+| `/slime_animal` | Random animal fact |
+| `/slime_emojimixup` | Mix up emoji meanings |
+| `/slime_rave` | Start a rave |
+| `/slime_rave bg <key>` | Set rave background video |
+| `/slime_img prompt` | Generate an image |
+| `/slime_afk [message]` | Set AFK status |
+| `/slime_recommend` | Get a personalised activity suggestion |
+| `/slime_help [topic\|start]` | Help guide — use `start` for the beginner guide |
+| `/slime_setup view\|channel\|tips\|post\|reset` | Workspace setup |
 
 </details>
 
 ---
 
-*FuSBot — Full (Fu) Server (S) Bot*
+*slimebot — Full (Fu) Server (S) Bot*

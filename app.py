@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+﻿from dotenv import load_dotenv
 load_dotenv()
 
 import os
@@ -18,14 +18,14 @@ from groq import Groq
 import google.generativeai as genai
 
 from human_brain import BrainRuntime
-from mentions import mentions_fusbot
+from mentions import mentions_slimebot
 from redis_store import redis_get_json, redis_set_json
 from economy_shared import load_state
 load_state()
 from economy_shared import state, save_state
 from economy import get_user
 from slack_utils import parse_slack_mentions, slack_mention
-from fusbot_routing import allowed_in_workspace_channel, build_roast_request
+from slimebot_routing import allowed_in_workspace_channel, build_roast_request
 
 CHAT_HISTORY = defaultdict(lambda: deque(maxlen=10))
 
@@ -454,7 +454,7 @@ async def bot_roast(msg, uid, mode):
             scored = sorted(zip(spices, candidates), key=lambda x: abs(x[0] - user_spice))
             return enforce_short_roast(scored[0][1]["text"])
 
-        return "Pick a roast mode with /fus_roastmode fast, deep, or adjustable."
+        return "Pick a roast mode with /slime_roastmode fast, deep, or adjustable."
     except Roast500Error:
         return "Your roast was so powerful it caused a server error."
     except Exception as e:
@@ -499,7 +499,7 @@ async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None
         {
             "role": "system",
             "content": (
-                "your name is fusbot\n"
+                "your name is slimebot\n"
                 "you are a real slack user chatting naturally\n"
                 "do not mention you are a bot casually\n"
                 "write one short casual response\n"
@@ -757,7 +757,7 @@ def _init_brain(client: AsyncWebClient):
 # ── Slash commands ─────────────────────────────────────────────────────────────
 
 
-@app.command("/fus_roast")
+@app.command("/slime_roast")
 async def roast_cmd(ack, say, command, client):
     await ack()
     text = command.get("text", "").strip()
@@ -818,7 +818,7 @@ async def roast_cmd(ack, say, command, client):
         await say(f"{slack_mention(user_id)} {resp}")
         return
 
-    await say("Use `/fus_roast @User`, `/fus_roast @User1 @User2`, or `/fus_roast your text here`")
+    await say("Use `/slime_roast @User`, `/slime_roast @User1 @User2`, or `/slime_roast your text here`")
 
 
 @app.view("roast_pick_target")
@@ -838,7 +838,7 @@ async def roast_modal_submit(ack, body, client):
     await client.chat_postMessage(channel=channel, text=f"{slack_mention(uid)} {response}")
 
 
-@app.command("/fus_data")
+@app.command("/slime_data")
 async def data_cmd(ack, respond, command):
     await ack()
     text = command.get("text", "").strip()
@@ -868,7 +868,7 @@ async def data_cmd(ack, respond, command):
     await respond(text_out)
 
 
-@app.command("/fus_autor")
+@app.command("/slime_autor")
 async def autor_cmd(ack, respond, command):
     await ack()
     text = command.get("text", "").strip().lower()
@@ -882,10 +882,10 @@ async def autor_cmd(ack, respond, command):
         save_roast_memory()
         await respond("auto-roast is now off for this channel")
     else:
-        await respond("Usage: `/fus_autor on` or `/fus_autor off`")
+        await respond("Usage: `/slime_autor on` or `/slime_autor off`")
 
 
-@app.command("/fus_roastmode")
+@app.command("/slime_roastmode")
 async def roastmode_cmd(ack, respond, command):
     await ack()
     mode_choice = command.get("text", "").strip().lower()
@@ -902,9 +902,9 @@ async def roastmode_cmd(ack, respond, command):
         roast_mode[user_id] = mode_choice
         roast_history[user_id] = []
         save_roast_memory()
-        await respond(f"🔥 Roast Mode: *{mode_choice.upper()}*. Use `/fus_roastmode off` to stop.")
+        await respond(f"🔥 Roast Mode: *{mode_choice.upper()}*. Use `/slime_roastmode off` to stop.")
     else:
-        await respond("Usage: `/fus_roastmode fast|deep|adjustable|off`")
+        await respond("Usage: `/slime_roastmode fast|deep|adjustable|off`")
 
 
 # ── Message event ─────────────────────────────────────────────────────────────
@@ -945,7 +945,7 @@ async def handle_message(event, say, client, context):
     # check if bot is mentioned
     bot_user_id = context.get("bot_user_id", "")
     bot_mentioned = bool(bot_user_id and f"<@{bot_user_id}>" in text)
-    alias_mentioned = mentions_fusbot(text)
+    alias_mentioned = mentions_slimebot(text)
     mentioned = bot_mentioned or alias_mentioned
 
     # auto-roast when mentioned in auto-roast channel
@@ -1013,7 +1013,7 @@ async def main():
     await load_extensions()
     brain_runtime.start()
     handler = AsyncSocketModeHandler(app, os.environ.get("SLACK_APP_TOKEN"))
-    print("FuSBot (Slack) starting...")
+    print("slimebot (Slack) starting...")
     await handler.start_async()
 
 

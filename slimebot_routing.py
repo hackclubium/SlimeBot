@@ -27,7 +27,7 @@ def strip_slack_mentions(text: str) -> str:
 
 def _clean_roast_context(text: str) -> str:
     context = strip_slack_mentions(text)
-    context = re.sub(r"\bfusbot\b", "", context, flags=re.IGNORECASE)
+    context = re.sub(r"\bslimebot\b", "", context, flags=re.IGNORECASE)
     context = re.sub(r"\s+", " ", context).strip()
     while True:
         cleaned = _ROAST_COMMAND_RE.sub("", context).strip()

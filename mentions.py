@@ -1,24 +1,24 @@
-import re
+﻿import re
 
-FUSBOT_ALIASES = {
-    "fusbot",
-    "fus bot",
-    "@fusbot",
-    "fus-bot",
-    "fus_bot",
-    "fusboi",
-    "fusb0t",
-    "fus-b0t",
-    "FUSBOT",
-    "FuSBot",
+SLIMEBOT_ALIASES = {
+    "slimebot",
+    "slime bot",
+    "@slimebot",
+    "slime-bot",
+    "slime_bot",
+    "slimeboi",
+    "slimeb0t",
+    "slime-b0t",
+    "SLIMEBOT",
+    "SliMeBot",
 }
 
 _ALIAS_PATTERNS = [
     re.compile(rf"\b{re.escape(a)}\b", re.IGNORECASE)
-    for a in FUSBOT_ALIASES
+    for a in SLIMEBOT_ALIASES
 ]
 
-def mentions_fusbot(text: str) -> bool:
+def mentions_slimebot(text: str) -> bool:
     if not text:
         return False
     return any(p.search(text) for p in _ALIAS_PATTERNS)

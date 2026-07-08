@@ -1,4 +1,4 @@
-import aiohttp
+﻿import aiohttp
 import logging
 
 log = logging.getLogger("animals")
@@ -32,7 +32,7 @@ async def _fetch_animal(animal: str) -> dict | None:
 
 
 async def setup(app):
-    @app.command("/fus_animal")
+    @app.command("/slime_animal")
     async def animal_cmd(ack, command, respond):
         await ack()
         text = (command.get("text") or "").strip().lower().replace(" ", "_")

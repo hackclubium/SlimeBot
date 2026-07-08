@@ -1,11 +1,11 @@
-import asyncio
+﻿import asyncio
 import time
 import random
 import math
 import re
-from mentions import mentions_fusbot
+from mentions import mentions_slimebot
 from ai_interject import ai_interject_line
-from fusbot_routing import build_roast_request
+from slimebot_routing import build_roast_request
 from redis_store import redis_get_json, redis_set_json
 from collections import defaultdict, deque, Counter
 from typing import Any, Awaitable, Dict, Deque, List, Tuple, Optional, Callable
@@ -173,14 +173,14 @@ def _low_effort(text: str) -> bool:
 MENTION_ROAST_KEYS = {"roast","cook","flame","destroy","smoke","pack","clown","violate"}
 MENTION_SOCIAL_KEYS = {"yo","hey","hi","sup","bro","listen","look","thoughts","opinion"}
 
-def _strip_fusbot_refs(text: str) -> str:
+def _strip_slimebot_refs(text: str) -> str:
     t = text or ""
     t = re.sub(r"<@[A-Z0-9]+>", "", t)
-    t = re.sub(r"\bfusbot\b", "", t, flags=re.IGNORECASE)
+    t = re.sub(r"\bslimebot\b", "", t, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", t).strip()
 
 def _mention_intent(content: str) -> str:
-    stripped = _strip_fusbot_refs(content or "")
+    stripped = _strip_slimebot_refs(content or "")
     t = _norm(stripped)
     words = set(_words(t))
     if not t:
@@ -1239,7 +1239,7 @@ class BrainRuntime:
         if not content:
             return None
 
-        mentioned = mentions_fusbot(content) or (bot_user_id and f"<@{bot_user_id}>" in content)
+        mentioned = mentions_slimebot(content) or (bot_user_id and f"<@{bot_user_id}>" in content)
 
         if content and not content[0] in IGNORE_PREFIXES:
             self.brain.observe_channel_message(channel_id, content, ts)
