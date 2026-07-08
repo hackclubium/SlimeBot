@@ -109,6 +109,7 @@ GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-2.5-p
 OPENAI_MODELS = []
 OPENROUTER_MODELS = []
 NORMAL_CHAT_MODELS = [
+    "openai/gpt-4o-mini:online",  # openrouter :online suffix = live web search, tried first
     "hackclub:qwen/qwen3-32b", "groq:llama-3.1-8b-instant", "gemini-2.0-flash", "gemini-2.0-pro",
     "github:gpt-4o-mini", "openai:gpt-4o-mini", "openai:gpt-4o"
 ]
@@ -480,6 +481,39 @@ async def typing_indicator(channel_id: str, client, coro):
             except Exception as e:
                 log(f"[TYPING] placeholder delete failed: {e}")
 
+# ── Web search ──────────────────────────────────────────────────────────────────
+
+SEARCH_TRIGGER_RE = re.compile(
+    r"\b(latest|newest|recent|today|right now|currently|this (week|month|year)|"
+    r"who (is|won|are)|what(?:'s| is) (the )?(latest|new|current)|search for|"
+    r"look up|google|news about|score|update on|price of|weather)\b",
+    re.IGNORECASE,
+)
+
+async def web_search(query: str, max_results: int = 4) -> str:
+    """DuckDuckGo HTML search, no API key needed. Returns a short text block or ''."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://html.duckduckgo.com/html/",
+                data={"q": query},
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=aiohttp.ClientTimeout(total=6),
+            ) as r:
+                html = await r.text()
+    except Exception as e:
+        log(f"[SEARCH] failed: {e}")
+        return ""
+
+    titles = re.findall(r'class="result__a"[^>]*>(.*?)</a>', html, re.DOTALL)
+    snippets = re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
+    strip_tags = lambda s: re.sub(r"<[^>]+>", "", s).strip()
+
+    lines = []
+    for t, s in zip(titles[:max_results], snippets[:max_results]):
+        lines.append(f"- {strip_tags(t)}: {strip_tags(s)}")
+    return "\n".join(lines)
+
 # ── Chat ───────────────────────────────────────────────────────────────────────
 
 async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None):
@@ -494,6 +528,12 @@ async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None
             "this user recently said things like:\n" + "\n".join(mem_lines) + "\n"
             "use this only to match tone and familiarity. do not reference these directly.\n"
         )
+
+    search_hint = ""
+    if SEARCH_TRIGGER_RE.search(msg):
+        results = await web_search(msg)
+        if results:
+            search_hint = f"live web search results for this question:\n{results}\nuse these to answer if relevant, in your own words, no links.\n"
 
     messages = [
         {
@@ -522,7 +562,7 @@ async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None
                 "periodt, it's not giving, and, understood, you feel me\n"
                 "if someone uses slang you don't know, guess from context and reply naturally\n"
                 "output only the message\n"
-                f"\n{structured_hint}\n{channel_hint}\n{memory_hint}"
+                f"\n{structured_hint}\n{channel_hint}\n{memory_hint}\n{search_hint}"
             ),
         },
         *CHAT_HISTORY[hist_key],
