@@ -739,6 +739,8 @@ Your output must contain ONLY the roast line. Nothing before it. Nothing after i
 # ── Slack App ─────────────────────────────────────────────────────────────────
 
 app = AsyncApp(token=os.environ.get("SLACK_BOT_TOKEN"))
+# ponytail: bot token drives slash commands/Socket Mode; user token is the "voice" (messages+reactions)
+user_client = AsyncWebClient(token=os.environ.get("SLACK_USER_TOKEN"))
 
 brain_runtime: BrainRuntime = None  # initialized in startup
 
@@ -746,7 +748,7 @@ brain_runtime: BrainRuntime = None  # initialized in startup
 def _init_brain(client: AsyncWebClient):
     global brain_runtime
     brain_runtime = BrainRuntime(
-        client=client,
+        client=user_client,  # reactions_add fires from user account
         chat_fn=bot_chat,
         roast_fn=bot_roast,
         get_roast_mode=lambda uid: roast_mode.get(uid),
@@ -806,7 +808,7 @@ async def roast_cmd(ack, say, command, client):
             response = await bot_roast(target_prompt, uid, mode)
             out.append(f"{slack_mention(uid)} {response}")
         final = "\n".join(x for x in out if x.strip()) or "Even all the models refused to roast."
-        await say(final)
+        await user_client.chat_postMessage(channel=command["channel_id"], text=final)
         return
 
     if text:
@@ -815,7 +817,7 @@ async def roast_cmd(ack, say, command, client):
         resp = await bot_roast(request.prompt, user_id, mode)
         if not resp or not resp.strip():
             resp = "Even the AI models said 'nah bro I'm good'."
-        await say(f"{slack_mention(user_id)} {resp}")
+        await user_client.chat_postMessage(channel=command["channel_id"], text=f"{slack_mention(user_id)} {resp}")
         return
 
     await say("Use `/slime_roast @User`, `/slime_roast @User1 @User2`, or `/slime_roast your text here`")
@@ -955,7 +957,7 @@ async def handle_message(event, say, client, context):
         mode = roast_mode.get(uid, "deep")
         reply = await typing_indicator(channel_id, client, bot_roast(request.prompt, target_uid, mode))
         if reply:
-            await say(f"{slack_mention(target_uid)} {reply}")
+            await user_client.chat_postMessage(channel=channel_id, text=f"{slack_mention(target_uid)} {reply}")
         return
 
     # brain-driven response — only replies when the bot is pinged (see on_message_slack)
@@ -967,7 +969,7 @@ async def handle_message(event, say, client, context):
             text=text,
             ts=ts,
             bot_user_id=bot_user_id,
-            say=say,
+            say=lambda text: user_client.chat_postMessage(channel=channel_id, text=text),
         )
 
 
