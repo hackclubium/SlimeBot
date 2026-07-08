@@ -72,11 +72,12 @@ Go to **Settings → Secrets → Actions** and add:
 |---|---|
 | `SLACK_BOT_TOKEN` | `xoxb-…` bot token |
 | `SLACK_APP_TOKEN` | `xapp-…` socket mode token |
-| `GITHUB` | GitHub PAT for AI models |
+| `HACKCLUB_AI_KEY` | Hack Club AI proxy key — primary chat/roast provider |
 | `PAT_TOKEN` | GitHub PAT for pushing state |
-| `GROQ` | Groq API key *(optional)* |
-| `GEMINI_API_KEY` | Gemini API key *(optional)* |
-| `OPENROUTER_KEY` | OpenRouter key *(optional)* |
+| `GITHUB` | GitHub PAT for AI models *(fallback, optional)* |
+| `GROQ` | Groq API key *(fallback, optional)* |
+| `GEMINI_API_KEY` | Gemini API key *(fallback, optional)* |
+| `OPENROUTER_KEY` | OpenRouter key *(fallback, optional)* |
 
 ### 4. Run
 

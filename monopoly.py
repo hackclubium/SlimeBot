@@ -516,7 +516,6 @@ class MonopolyBoardRenderer:
 
     def _load(self):
         if self.base is None and PIL_AVAILABLE and os.path.exists(self.board_path):
-            import hashlib as _h
             self.base = Image.open(self.board_path).convert("RGBA")
 
     def render(self, state: MonopolyState) -> Optional[bytes]:
@@ -585,7 +584,6 @@ async def _advance_ai(client, channel, engine, uid, ts):
     if engine.game_over():
         w = engine.winner()
         winner_name = (engine.s.uid[w].ai_name if engine.s.uid[w].is_ai else f"<@{engine.s.uid[w].user_id}>") if w is not None else "?"
-        blocks = _render_blocks(engine, engine.events, channel, uid)
         await client.chat_update(channel=channel, ts=ts, blocks=[{"type":"section","text":{"type":"mrkdwn","text":f":trophy: *Game over!* {winner_name} wins!"}}], text="Monopoly game over")
         _delete(channel); _games.pop(channel, None); return ts
     _save(channel, engine); return await _post_game(client, channel, engine, uid, ts=ts)

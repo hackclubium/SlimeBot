@@ -27,8 +27,6 @@ from slack_utils import parse_slack_mentions, slack_mention
 from fusbot_routing import allowed_in_workspace_channel, build_roast_request
 
 CHAT_HISTORY = defaultdict(lambda: deque(maxlen=10))
-ACTIVE_CONVO = {}
-LAST_BOT_MESSAGE = {}
 
 def session_key(channel_id: str, user_id: str):
     return (channel_id, user_id)
@@ -36,25 +34,6 @@ def session_key(channel_id: str, user_id: str):
 MIN_DEEP_SPICE = 25
 
 AUTO_ROAST_BOT_IDS: set[str] = set()
-
-FOLLOWUP_SYSTEM_PROMPT = """You are a conversation intent classifier.
-
-You will be given:
-- the bot's last message
-- the user's new message
-
-Decide if the user's message is intended as a reply to the bot.
-
-Answer ONLY one word:
-YES or NO
-
-YES if it feels like a reaction, agreement, continuation, clarification,
-or response to what the bot just said — even if vague, slangy, or short.
-
-NO if it feels unrelated or directed elsewhere.
-
-Be human.
-"""
 
 MEMORY_FILE = "roast_memory.json"
 
@@ -120,17 +99,25 @@ openrouter_client = (
     if OPENROUTER_KEY else None
 )
 
+HACKCLUB_AI_KEY = os.getenv("HACKCLUB_AI_KEY")
+hackclub_client = (
+    OpenAI(
+        api_key=HACKCLUB_AI_KEY,
+        base_url="https://ai.hackclub.com/proxy/v1",
+    )
+    if HACKCLUB_AI_KEY else None
+)
+
+HACKCLUB_MODELS = ["hackclub:qwen/qwen3-32b"]
 GROQ_MODELS = ["groq:qwen/qwen3-32b", "groq:llama-3.3-70b-versatile", "groq:llama-3.1-8b-instant"]
 GITHUB_MODELS = ["gpt-4o-mini", "phi-4-mini-instruct"]
 GEMINI_MODELS = ["gemini-2.5-flash-lite", "gemini-2.0-flash-lite", "gemini-2.5-pro", "gemini-2.5-flash"]
 OPENAI_MODELS = []
 OPENROUTER_MODELS = []
 NORMAL_CHAT_MODELS = [
-    "groq:llama-3.1-8b-instant", "gemini-2.0-flash", "gemini-2.0-pro",
+    "hackclub:qwen/qwen3-32b", "groq:llama-3.1-8b-instant", "gemini-2.0-flash", "gemini-2.0-pro",
     "github:gpt-4o-mini", "openai:gpt-4o-mini", "openai:gpt-4o"
 ]
-FOLLOWUP_MODELS = ["github:gpt-4o-mini", "microsoft/phi-3-mini-128k-instruct", "gemini-2.0-flash", "groq:llama-3.1-8b-instant"]
-
 class Roast500Error(Exception):
     pass
 
@@ -173,6 +160,18 @@ async def safe_completion(model, messages):
         except Exception as e:
             log(f"[TIMEOUT/ERROR:{model}] {e}")
             return None
+
+    if model.startswith("hackclub:"):
+        if not hackclub_client: return None
+        actual = model.split("hackclub:", 1)[1]
+        def call():
+            try:
+                r = hackclub_client.chat.completions.create(model=actual, messages=messages, max_tokens=250, temperature=1.0)
+                return wrap_text(strip_reasoning(extract_text(model, r)))
+            except Exception as e:
+                log(f"[HACKCLUB FAIL:{actual}] {e}")
+                return None
+        return await run(call)
 
     if model.startswith("groq:"):
         if not groq_client: return None
@@ -396,6 +395,8 @@ async def gather_all_llm_roasts(prompt, user_id):
     ]
     tasks = []
     sources = []
+    for m in HACKCLUB_MODELS:
+        tasks.append(safe_completion(m, context)); sources.append(f"HACKCLUB:{m.split(':', 1)[1]}")
     for m in GEMINI_MODELS:
         tasks.append(safe_completion(m, context)); sources.append(f"GM:{m}")
     for m in GROQ_MODELS:
@@ -548,48 +549,6 @@ async def bot_chat(msg: str, uid: str, channel_id: str, workspace_id: str = None
             log(f"[CHAT] {model} failed: {e}")
 
     return "my brain lagged a bit, say that again"
-
-# ── Follow-up detection ───────────────────────────────────────────────────────
-
-def _normalize_yesno(text: str) -> str:
-    t = (text or "").strip().upper()
-    if t.startswith("YES"):
-        return "YES"
-    if t.startswith("NO"):
-        return "NO"
-    return ""
-
-async def followup_completion(model: str, last_bot_msg: str, user_msg: str):
-    messages = [
-        {"role": "system", "content": FOLLOWUP_SYSTEM_PROMPT.strip()},
-        {"role": "user", "content": f"BOT SAID:\n{last_bot_msg}\n\nUSER SAID:\n{user_msg}"},
-    ]
-    if model.startswith("gemini"):
-        messages = [{"role": "user", "content": FOLLOWUP_SYSTEM_PROMPT.strip() + f"\n\nBOT SAID:\n{last_bot_msg}\n\nUSER SAID:\n{user_msg}\n\nanswer only YES or NO"}]
-    resp = await safe_completion(model, messages)
-    return extract_text(f"FOLLOWUP:{model}", resp) or "" if resp else ""
-
-async def ai_is_followup(last_bot_msg: str, user_msg: str) -> bool:
-    for model in FOLLOWUP_MODELS:
-        try:
-            raw = await followup_completion(model, last_bot_msg, user_msg)
-            ans = _normalize_yesno(raw)
-            if ans == "YES":
-                return True
-            if ans == "NO":
-                return False
-        except Exception:
-            continue
-    return False
-
-def obvious_followup(text: str, convo: dict) -> bool:
-    t = text.strip().lower()
-    if t in {"wdym", "what", "huh", "why", "how", "explain", "elaborate", "?", "??"}:
-        return True
-    if convo and (time.time() - convo["last_ts"] <= 45):
-        if len(t) <= 60 and not t.startswith(("!", "/")):
-            return True
-    return False
 
 # ── User memory ───────────────────────────────────────────────────────────────
 
@@ -874,7 +833,6 @@ async def roast_modal_submit(ack, body, client):
     meta = json.loads(body["view"]["private_metadata"])
     channel = meta["channel"]
     mode = meta.get("mode", "deep")
-    user_id = body["user"]["id"]
     uid = body["view"]["state"]["values"]["target_block"]["target_user"]["selected_user"]
     try:
         info = await client.users_info(user=uid)
@@ -979,10 +937,6 @@ async def handle_message(event, say, client, context):
     if not allowed_in_workspace_channel(team_id, enterprise_id, channel_id, _allowed_workspace, _allowed_channel):
         return
 
-    skey = session_key(channel_id, uid)
-    convo = ACTIVE_CONVO.get(skey)
-    last_bot = LAST_BOT_MESSAGE.get(skey)
-
     # update user memory
     try:
         update_user_memory_from_message(text, uid, channel_id)
@@ -1008,33 +962,11 @@ async def handle_message(event, say, client, context):
         reply = await typing_indicator(channel_id, client, bot_roast(request.prompt, target_uid, mode))
         if reply:
             await say(f"{slack_mention(target_uid)} {reply}")
-            LAST_BOT_MESSAGE[skey] = reply
-            ACTIVE_CONVO[skey] = {"user_id": uid, "last_ts": time.time(), "misses": 0}
         return
 
-    # expire old conversations
-    if convo and (time.time() - convo["last_ts"] > 120):
-        ACTIVE_CONVO.pop(skey, None)
-        LAST_BOT_MESSAGE.pop(skey, None)
-        convo = None
-        last_bot = None
-
-    # follow-up detection
-    if last_bot:
-        is_followup = obvious_followup(text, convo)
-        if not is_followup:
-            is_followup = await ai_is_followup(last_bot, text)
-        if is_followup:
-            reply = await typing_indicator(channel_id, client, bot_chat(text, uid, channel_id, team_id))
-            if reply:
-                await say(reply)
-                LAST_BOT_MESSAGE[skey] = reply
-                ACTIVE_CONVO[skey] = {"user_id": uid, "last_ts": time.time(), "misses": 0}
-            return
-
-    # brain-driven response
+    # brain-driven response — only replies when the bot is pinged (see on_message_slack)
     if brain_runtime and text and not text.startswith(("/", "!")):
-        reply = await brain_runtime.on_message_slack(
+        await brain_runtime.on_message_slack(
             uid=uid,
             channel_id=channel_id,
             team_id=team_id,
@@ -1043,9 +975,6 @@ async def handle_message(event, say, client, context):
             bot_user_id=bot_user_id,
             say=say,
         )
-        if reply:
-            LAST_BOT_MESSAGE[skey] = reply
-            ACTIVE_CONVO[skey] = {"user_id": uid, "last_ts": time.time(), "misses": 0}
 
 
 @app.event("reaction_added")

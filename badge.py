@@ -172,7 +172,6 @@ def _animated_identity(display_name, uid_str, data):
     frames = []
     for i in range(24):
         base = _core_card(display_name, uid_str, accent, f"ID {uid_str}", right, avatar, (12, 14, 18, 255), (20, 20, 28, 255), glass_alpha=18)
-        draw = ImageDraw.Draw(base)
         p = _pulse(i, speed=0.22, lo=70, hi=150)
         aura = Image.new("RGBA", base.size, (0, 0, 0, 0))
         a = ImageDraw.Draw(aura)
@@ -315,7 +314,6 @@ def _animated_void(display_name, uid_str, data):
     if clarity:
         right.append(f"CLARITY {clarity}")
     seed_base = (int(uid_str or 0) * 99991) ^ 0xA5A5A5
-    uid_int = int(uid_str or 0)
     frames = []
     for i in range(26):
         base = _core_card(display_name, uid_str, accent, "VOID-TOUCHED", right, avatar, (10, 12, 16, 255), (14, 16, 22, 255), glass_alpha=10)

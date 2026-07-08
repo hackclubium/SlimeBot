@@ -1263,39 +1263,34 @@ class BrainRuntime:
         if content and not content[0] in IGNORE_PREFIXES:
             self.brain.observe_channel_message(channel_id, content, ts)
 
+        if not mentioned:
+            # ping-only: still collect data above, but no reactions or replies unprompted
+            self.outcomes.observe_message_slack(uid, channel_id)
+            self.brain.self_reflect()
+            self.brain.maybe_persist()
+            return None
+
         await self.brain.maybe_react_slack(uid, channel_id, team_id, content, ts, mentioned, self.client)
 
-        if mentioned:
-            intent = _mention_intent(content)
-            mode = self.get_roast_mode(uid)
+        intent = _mention_intent(content)
+        mode = self.get_roast_mode(uid)
 
-            if intent == "social_ping":
-                if self.brain._rng.random() < 0.25:
-                    reply = random.choice(["yo", "sup", "what's up", "yeah?", "hm?"])
-                    await self.brain.human_delay_slack(reply)
-                    self.brain.mark_busy(channel_id)
-                    await say(reply)
-                    return reply
-                return None
+        if intent == "social_ping":
+            reply = random.choice(["yo", "sup", "what's up", "yeah?", "hm?"])
+        elif intent == "roast_request" and mode:
+            request = build_roast_request(content, uid, bot_user_id)
+            target_uid = request.target_user_ids[0]
+            reply = await self.roast_fn(request.prompt, target_uid, mode)
+            if reply and target_uid != uid:
+                reply = f"<@{target_uid}> {reply}"
+        else:
+            reply = await self.chat_fn(content, uid, channel_id, team_id)
 
-            if intent == "roast_request" and mode:
-                request = build_roast_request(content, uid, bot_user_id)
-                target_uid = request.target_user_ids[0]
-                reply = await self.roast_fn(request.prompt, target_uid, mode)
-                if reply and target_uid != uid:
-                    reply = f"<@{target_uid}> {reply}"
-            else:
-                reply = await self.chat_fn(content, uid, channel_id, team_id)
+        if reply:
+            await self.brain.human_delay_slack(reply)
+            self.brain.mark_busy(channel_id)
+            await say(reply)
 
-            if reply:
-                await self.brain.human_delay_slack(reply)
-                self.brain.mark_busy(channel_id)
-                await say(reply)
-            return reply
-
-        reply = await self.interjector.maybe_interject_slack(uid, channel_id, team_id, content, say)
-        if reply is not None:
-            self.outcomes.note_interject(channel_id)
         self.outcomes.observe_message_slack(uid, channel_id)
         self.brain.self_reflect()
         self.brain.maybe_persist()

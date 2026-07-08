@@ -93,7 +93,6 @@ async def setup(app):
         prompt = (command.get("text") or "").strip()
         if not prompt:
             return await respond(text="Usage: `/fus_img <prompt>`", response_type="ephemeral")
-        uid = command["user_id"]
         channel = command["channel_id"]
         await respond(text=f":hourglass: Generating image for *{prompt}*...")
         img_bytes = await generate_image(prompt)

@@ -134,7 +134,7 @@ async def _do_mix(client, uid: str, channel: str, ts: str | None, a: str, b: str
     else:
         buf = io.BytesIO(data_bytes)
         await client.files_upload_v2(channel=channel, file=buf, filename="emoji.png", initial_comment=f"*{a} + {b}*")
-        result2 = await client.chat_postMessage(channel=channel, blocks=_mix_blocks(uid, a, b, url), text=f"{a}+{b}")
+        await client.chat_postMessage(channel=channel, blocks=_mix_blocks(uid, a, b, url), text=f"{a}+{b}")
 
 
 async def setup(app):

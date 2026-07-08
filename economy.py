@@ -367,7 +367,7 @@ async def setup(app):
         _bj_games[uid] = game
 
         blocks = _bj_blocks(uid, game, ":clock1: Choose *Hit* or *Stand*.", reveal=False)
-        result = await respond(blocks=blocks, text="Blackjack", response_type="in_channel")
+        await respond(blocks=blocks, text="Blackjack", response_type="in_channel")
 
     @app.action("bj_hit")
     async def bj_hit(ack, body, client):
@@ -468,7 +468,7 @@ async def setup(app):
     @app.command("/fus_give")
     async def give(ack, command, respond, client):
         await ack()
-        import re, json
+        import re
         uid = command["user_id"]
         channel = command["channel_id"]
         text = (command.get("text") or "").strip()
@@ -514,7 +514,6 @@ async def setup(app):
     @app.view("give_pick_target")
     async def give_modal_submit(ack, body, client):
         await ack()
-        import json
         meta = json.loads(body["view"]["private_metadata"])
         uid = meta["uid"]
         channel = meta["channel"]

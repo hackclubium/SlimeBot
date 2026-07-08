@@ -13,6 +13,10 @@ openrouter_client = OpenAI(
     api_key=os.getenv("OPENROUTER_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
+github_client = (
+    OpenAI(api_key=os.getenv("GITHUB"), base_url="https://models.inference.ai.azure.com")
+    if os.getenv("GITHUB") else None
+)
 
 def extract_text_with_logging(model_name, resp):
     try:
