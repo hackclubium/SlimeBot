@@ -1011,6 +1011,16 @@ async def load_extensions():
 
 # ── Startup ────────────────────────────────────────────────────────────────────
 
+async def _keep_user_presence_active():
+    # ponytail: Slack drops presence to "away" after ~30min idle; re-ping to stay green.
+    while True:
+        try:
+            await user_client.users_setPresence(presence="auto")
+        except Exception as e:
+            print(f"[USER] setPresence failed: {e}")
+        await asyncio.sleep(300)
+
+
 async def main():
     global user_account_id
     client = AsyncWebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
@@ -1018,6 +1028,7 @@ async def main():
         try:
             auth = await user_client.auth_test()
             user_account_id = auth["user_id"]
+            asyncio.ensure_future(_keep_user_presence_active())
         except Exception as e:
             print(f"[USER] auth_test failed, pings to user account won't trigger replies: {e}")
     _init_brain(client)
