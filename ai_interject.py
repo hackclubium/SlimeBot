@@ -126,7 +126,7 @@ async def ai_interject_line(bucket: str, content: str, user_memory: List[str] = 
         )
     
     system = (
-        "your name is slimebot\n"
+        "your name is slimeyslimeyslime (also known as slimebot)\n"
         "you are a real discord user reacting naturally\n"
         "write one short casual response\n"
         "1 to 10 words max\n"
