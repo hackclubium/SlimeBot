@@ -11,6 +11,8 @@ SLIMEBOT_ALIASES = {
     "slime-b0t",
     "SLIMEBOT",
     "SliMeBot",
+    "slimeyslimeyslime",
+    "@slimeyslimeyslime",
 }
 
 _ALIAS_PATTERNS = [
