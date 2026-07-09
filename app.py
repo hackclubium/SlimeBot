@@ -973,6 +973,10 @@ async def handle_message(event, say, client, context):
     ts = event.get("ts", "")
     thread_ts = event.get("thread_ts")
     team_id = context.get("team_id", "") or event.get("team", "")
+    
+    # DEBUG: log full text for mention debugging
+    if len(text) > 60:
+        log(f"[MSG] FULL TEXT: {text}")
 
     # update user memory
     try:
@@ -993,6 +997,7 @@ async def handle_message(event, say, client, context):
     mentioned = bot_mentioned or user_mentioned or alias_mentioned
     
     log(f"[MENTION] channel={channel_id} bot_user_id={bot_user_id} user_account_id={user_account_id}")
+    log(f"[MENTION] Checking for: <@{bot_user_id}> OR <@{user_account_id}> OR aliases in text")
     log(f"[MENTION] bot_mentioned={bot_mentioned} user_mentioned={user_mentioned} alias_mentioned={alias_mentioned} => mentioned={mentioned}")
     log(f"[MENTION] brain_runtime={brain_runtime is not None} auto_roast={auto_roast.get(channel_id, False)}")
 
