@@ -946,12 +946,23 @@ async def roastmode_cmd(ack, respond, command):
 
 @app.event("message")
 async def handle_message(event, say, client, context):
+    # DEBUG: log every message received
+    channel_id = event.get("channel", "")
+    text = event.get("text", "").strip()
+    uid = event.get("user")
+    subtype = event.get("subtype")
+    bot_id = event.get("bot_id")
+    
+    log(f"[MSG] channel={channel_id} user={uid} subtype={subtype} bot_id={bot_id} text={text[:60]}...")
+    
     # ignore bot messages and subtypes (edits, deletes, etc.)
     if event.get("subtype") or event.get("bot_id"):
+        log(f"[MSG] FILTERED: subtype={subtype} or bot_id={bot_id}")
         return
 
     uid = event.get("user")
     if not uid:
+        log(f"[MSG] FILTERED: no user id")
         return
 
     text = event.get("text", "").strip()
@@ -976,9 +987,14 @@ async def handle_message(event, say, client, context):
     user_mentioned = bool(user_account_id and f"<@{user_account_id}>" in text)
     alias_mentioned = mentions_slimebot(text)
     mentioned = bot_mentioned or user_mentioned or alias_mentioned
+    
+    log(f"[MENTION] channel={channel_id} bot_user_id={bot_user_id} user_account_id={user_account_id}")
+    log(f"[MENTION] bot_mentioned={bot_mentioned} user_mentioned={user_mentioned} alias_mentioned={alias_mentioned} => mentioned={mentioned}")
+    log(f"[MENTION] brain_runtime={brain_runtime is not None} auto_roast={auto_roast.get(channel_id, False)}")
 
     # auto-roast when mentioned in auto-roast channel
     if mentioned and auto_roast.get(channel_id):
+        log(f"[ROAST] auto-roast triggered for channel={channel_id}")
         request = build_roast_request(text, uid, bot_user_id)
         target_uid = request.target_user_ids[0]
         mode = roast_mode.get(uid, "deep")
@@ -989,16 +1005,24 @@ async def handle_message(event, say, client, context):
 
     # brain-driven response — only replies when the bot is pinged (see on_message_slack)
     if brain_runtime and text and not text.startswith(("/", "!")):
-        await brain_runtime.on_message_slack(
-            uid=uid,
-            channel_id=channel_id,
-            team_id=team_id,
-            text=text,
-            ts=ts,
-            bot_user_id=bot_user_id,
-            say=lambda text: typing_indicator(channel_id, user_client, user_client.chat_postMessage(channel=channel_id, text=text)),
-            user_account_id=user_account_id,
-        )
+        log(f"[BRAIN] calling on_message_slack for channel={channel_id} mentioned={mentioned}")
+        try:
+            await brain_runtime.on_message_slack(
+                uid=uid,
+                channel_id=channel_id,
+                team_id=team_id,
+                text=text,
+                ts=ts,
+                bot_user_id=bot_user_id,
+                say=lambda text: typing_indicator(channel_id, user_client, user_client.chat_postMessage(channel=channel_id, text=text)),
+                user_account_id=user_account_id,
+            )
+        except Exception as e:
+            log(f"[BRAIN] ERROR in on_message_slack: {e}")
+            import traceback
+            log(traceback.format_exc())
+    else:
+        log(f"[BRAIN] SKIPPED: brain_runtime={brain_runtime is not None} text_starts_with_cmd={text and text[0] in ('/', '!')}")
 
 
 @app.event("reaction_added")
@@ -1050,6 +1074,12 @@ async def _keep_user_presence_active():
 async def main():
     global user_account_id
     client = AsyncWebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+    
+    print("[STARTUP] Initializing slimebot...")
+    print(f"[STARTUP] SLACK_BOT_TOKEN: {'SET' if os.environ.get('SLACK_BOT_TOKEN') else 'MISSING'}")
+    print(f"[STARTUP] SLACK_APP_TOKEN: {'SET' if os.environ.get('SLACK_APP_TOKEN') else 'MISSING'}")
+    print(f"[STARTUP] SLACK_USER_TOKEN: {'SET' if os.environ.get('SLACK_USER_TOKEN') else 'MISSING'}")
+    
     if os.environ.get("SLACK_USER_TOKEN"):
         try:
             auth = await user_client.auth_test()
@@ -1058,9 +1088,20 @@ async def main():
             asyncio.ensure_future(_keep_user_presence_active())
         except Exception as e:
             print(f"[USER] auth_test failed, pings to user account won't trigger replies: {e}")
+            import traceback
+            print(traceback.format_exc())
+    else:
+        print("[USER] WARNING: SLACK_USER_TOKEN not set, user mentions won't work")
+    
+    print(f"[STARTUP] user_account_id={user_account_id}")
+    
     _init_brain(client)
+    print(f"[STARTUP] brain_runtime initialized: {brain_runtime is not None}")
+    
     await load_extensions()
     brain_runtime.start()
+    print("[STARTUP] brain_runtime started")
+    
     handler = AsyncSocketModeHandler(app, os.environ.get("SLACK_APP_TOKEN"))
     print("slimebot (Slack) starting...")
     await handler.start_async()
