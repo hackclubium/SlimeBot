@@ -464,11 +464,11 @@ async def bot_roast(msg, uid, mode):
 
 # ── Typing indicator ──────────────────────────────────────────────────────────
 
-async def typing_indicator(channel_id: str, client, coro):
+async def typing_indicator(channel_id: str, client, coro, thread_ts=None):
     """Post a '...' placeholder so users see activity, delete it once done."""
     placeholder_ts = None
     try:
-        result = await client.chat_postMessage(channel=channel_id, text="...")
+        result = await client.chat_postMessage(channel=channel_id, text="...", thread_ts=thread_ts)
         placeholder_ts = result.get("ts")
     except Exception as e:
         log(f"[TYPING] placeholder post failed: {e}")
@@ -797,12 +797,13 @@ async def roast_cmd(ack, say, command, client):
     await ack()
     text = command.get("text", "").strip()
     user_id = command["user_id"]
+    thread_ts = command.get("thread_ts")
     mode = roast_mode.get(user_id, "deep")
 
     # resolve <@U...> encoded mentions (autocomplete path)
     mention_ids = parse_slack_mentions(text)
 
-    log(f"[ROAST] user={user_id} text={text!r} mention_ids={mention_ids}")
+    log(f"[ROAST] user={user_id} text={text!r} mention_ids={mention_ids} thread_ts={thread_ts}")
 
     # no valid mention parsed — open a user-picker modal
     if not mention_ids and (not text or text.startswith("@")):
@@ -811,7 +812,7 @@ async def roast_cmd(ack, say, command, client):
             view={
                 "type": "modal",
                 "callback_id": "roast_pick_target",
-                "private_metadata": json.dumps({"mode": mode, "channel": command["channel_id"]}),
+                "private_metadata": json.dumps({"mode": mode, "channel": command["channel_id"], "thread_ts": thread_ts}),
                 "title": {"type": "plain_text", "text": "Pick a target"},
                 "submit": {"type": "plain_text", "text": "Roast"},
                 "close": {"type": "plain_text", "text": "Cancel"},
@@ -838,19 +839,19 @@ async def roast_cmd(ack, say, command, client):
             except Exception:
                 target_name = uid
             target_prompt = f"Roast {target_name}. One short roast line addressed directly to {target_name} only. Do not mention the instruction or prompt."
-            response = await typing_indicator(command["channel_id"], user_client, bot_roast(target_prompt, uid, mode))
+            response = await typing_indicator(command["channel_id"], user_client, bot_roast(target_prompt, uid, mode), thread_ts)
             out.append(f"{slack_mention(uid)} {response}")
         final = "\n".join(x for x in out if x.strip()) or "Even all the models refused to roast."
-        await user_client.chat_postMessage(channel=command["channel_id"], text=final)
+        await user_client.chat_postMessage(channel=command["channel_id"], text=final, thread_ts=thread_ts)
         return
 
     if text:
         # plain text roast — no target, roast is about the message content
         request = build_roast_request(text, user_id)
-        resp = await typing_indicator(command["channel_id"], user_client, bot_roast(request.prompt, user_id, mode))
+        resp = await typing_indicator(command["channel_id"], user_client, bot_roast(request.prompt, user_id, mode), thread_ts)
         if not resp or not resp.strip():
             resp = "Even the AI models said 'nah bro I'm good'."
-        await user_client.chat_postMessage(channel=command["channel_id"], text=f"{slack_mention(user_id)} {resp}")
+        await user_client.chat_postMessage(channel=command["channel_id"], text=f"{slack_mention(user_id)} {resp}", thread_ts=thread_ts)
         return
 
     await say("Use `/slime_roast @User`, `/slime_roast @User1 @User2`, or `/slime_roast your text here`")
@@ -861,6 +862,7 @@ async def roast_modal_submit(ack, body, client):
     await ack()
     meta = json.loads(body["view"]["private_metadata"])
     channel = meta["channel"]
+    thread_ts = meta.get("thread_ts")
     mode = meta.get("mode", "deep")
     uid = body["view"]["state"]["values"]["target_block"]["target_user"]["selected_user"]
     try:
@@ -870,7 +872,7 @@ async def roast_modal_submit(ack, body, client):
         target_name = uid
     target_prompt = f"Roast {target_name}. One short roast line addressed directly to {target_name} only."
     response = await bot_roast(target_prompt, uid, mode)
-    await client.chat_postMessage(channel=channel, text=f"{slack_mention(uid)} {response}")
+    await client.chat_postMessage(channel=channel, text=f"{slack_mention(uid)} {response}", thread_ts=thread_ts)
 
 
 @app.command("/slime_data")
@@ -952,8 +954,9 @@ async def handle_message(event, say, client, context):
     uid = event.get("user")
     subtype = event.get("subtype")
     bot_id = event.get("bot_id")
+    thread_ts = event.get("thread_ts")
     
-    log(f"[MSG] channel={channel_id} user={uid} subtype={subtype} bot_id={bot_id} text={text[:60]}...")
+    log(f"[MSG] channel={channel_id} user={uid} subtype={subtype} bot_id={bot_id} thread_ts={thread_ts} text={text[:60]}...")
     
     # ignore bot messages and subtypes (edits, deletes, etc.)
     if event.get("subtype") or event.get("bot_id"):
@@ -968,6 +971,7 @@ async def handle_message(event, say, client, context):
     text = event.get("text", "").strip()
     channel_id = event.get("channel", "")
     ts = event.get("ts", "")
+    thread_ts = event.get("thread_ts")
     team_id = context.get("team_id", "") or event.get("team", "")
 
     # update user memory
@@ -994,18 +998,18 @@ async def handle_message(event, say, client, context):
 
     # auto-roast when mentioned in auto-roast channel
     if mentioned and auto_roast.get(channel_id):
-        log(f"[ROAST] auto-roast triggered for channel={channel_id}")
+        log(f"[ROAST] auto-roast triggered for channel={channel_id} thread_ts={thread_ts}")
         request = build_roast_request(text, uid, bot_user_id)
         target_uid = request.target_user_ids[0]
         mode = roast_mode.get(uid, "deep")
-        reply = await typing_indicator(channel_id, user_client, bot_roast(request.prompt, target_uid, mode))
+        reply = await typing_indicator(channel_id, user_client, bot_roast(request.prompt, target_uid, mode), thread_ts)
         if reply:
-            await user_client.chat_postMessage(channel=channel_id, text=f"{slack_mention(target_uid)} {reply}")
+            await user_client.chat_postMessage(channel=channel_id, text=f"{slack_mention(target_uid)} {reply}", thread_ts=thread_ts)
         return
 
     # brain-driven response — only replies when the bot is pinged (see on_message_slack)
     if brain_runtime and text and not text.startswith(("/", "!")):
-        log(f"[BRAIN] calling on_message_slack for channel={channel_id} mentioned={mentioned}")
+        log(f"[BRAIN] calling on_message_slack for channel={channel_id} mentioned={mentioned} thread_ts={thread_ts}")
         try:
             await brain_runtime.on_message_slack(
                 uid=uid,
@@ -1014,7 +1018,7 @@ async def handle_message(event, say, client, context):
                 text=text,
                 ts=ts,
                 bot_user_id=bot_user_id,
-                say=lambda text: typing_indicator(channel_id, user_client, user_client.chat_postMessage(channel=channel_id, text=text)),
+                say=lambda text: typing_indicator(channel_id, user_client, user_client.chat_postMessage(channel=channel_id, text=text, thread_ts=thread_ts), thread_ts),
                 user_account_id=user_account_id,
             )
         except Exception as e:
