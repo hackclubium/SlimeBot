@@ -465,21 +465,12 @@ async def bot_roast(msg, uid, mode):
 # ── Typing indicator ──────────────────────────────────────────────────────────
 
 async def typing_indicator(channel_id: str, client, coro, thread_ts=None):
-    """Post a '...' placeholder so users see activity, delete it once done."""
-    placeholder_ts = None
-    try:
-        result = await client.chat_postMessage(channel=channel_id, text="...", thread_ts=thread_ts)
-        placeholder_ts = result.get("ts")
-    except Exception as e:
-        log(f"[TYPING] placeholder post failed: {e}")
-    try:
-        return await coro
-    finally:
-        if placeholder_ts:
-            try:
-                await client.chat_delete(channel=channel_id, ts=placeholder_ts)
-            except Exception as e:
-                log(f"[TYPING] placeholder delete failed: {e}")
+    """Await the coroutine without showing a typing indicator.
+    
+    Note: Slack Web API doesn't provide a native typing indicator for bots.
+    This function just awaits the response without showing any placeholder.
+    """
+    return await coro
 
 # ── Web search ──────────────────────────────────────────────────────────────────
 
